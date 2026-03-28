@@ -1,3 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">CourseCompanionApp</string>
+    <string name="app_name">Course Companion</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Course Companion</string>
+    <string name="welcome_message">Welcome, Student!</string>
+    <string name="todays_tasks">Today\'s Tasks</string>
+    <string name="achievements">Achievements</string>
+    <string name="quick_stats">Quick Stats</string>
+
+    <!-- Courses -->
+    <string name="courses_title">My Courses</string>
+    <string name="add_course">Add New Course</string>
+    <string name="course_name">Course Name</string>
+    <string name="professor">Professor</string>
+    <string name="credits">Credits</string>
+    <string name="save_course">Save Course</string>
+    <string name="no_courses">No courses yet! Tap + to add your first course.</string>
+
+    <!-- Notes -->
+    <string name="notes_title">My Notes</string>
+    <string name="add_note">Add New Note</string>
+    <string name="note_title">Title</string>
+    <string name="note_content">Content</string>
+    <string name="save_note">Save Note</string>
+    <string name="no_notes">No notes yet! Tap + to add your first note.</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">My Tasks</string>
+    <string name="add_task">Add New Task</string>
+    <string name="task_title">Task Title</string>
+    <string name="due_date">Due Date (dd.mm.yyyy)</string>
+    <string name="save_task">Save Task</string>
+    <string name="no_tasks">No tasks yet! Tap + to add your first task.</string>
+
+    <!-- Profile -->
+    <string name="profile_name">Medina Alić</string>
+    <string name="profile_university">International Burch University</string>
+    <string name="profile_email">medina@stu.ibu.edu.ba</string>
+    <string name="profile_department">Software Engineering</string>
+    <string name="logout">Log Out</string>
+    <string name="logout_message">Are you sure you want to log out?</string>
+
+    <!-- Validation -->
+    <string name="error_enter_due_date">Please enter due date!</string>
+    <string name="error_enter_content">Please enter note content!</string>
 </resources>

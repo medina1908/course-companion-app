@@ -1,4 +1,4 @@
-package com.example.coursecompanionapp.presentation.ui.components
+package com.example.coursecompanionapp.presentation.ui.component
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
