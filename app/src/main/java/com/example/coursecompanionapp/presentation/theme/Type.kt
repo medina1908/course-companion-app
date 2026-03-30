@@ -1,4 +1,4 @@
-package com.example.coursecompanionapp.ui.theme
+package com.example.coursecompanionapp.presentation.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
