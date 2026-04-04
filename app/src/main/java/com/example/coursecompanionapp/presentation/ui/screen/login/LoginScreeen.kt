@@ -20,7 +20,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.coursecompanionapp.R
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.screen.login.component.LoginButton
-import com.example.coursecompanionapp.presentation.ui.screen.login.component.LoginHeader
 
 @Composable
 fun LoginScreen(

@@ -8,6 +8,14 @@
     <string name="todays_tasks">Today\'s Tasks</string>
     <string name="achievements">Achievements</string>
     <string name="quick_stats">Quick Stats</string>
+    <string name="task_study_kotlin">Study Kotlin</string>
+    <string name="task_complete_assignment">Complete Assignment</string>
+    <string name="task_read_docs">Read Docs</string>
+    <string name="achievement_first_course">First Course Added</string>
+    <string name="achievement_streak">3 Day Streak</string>
+    <string name="stat_courses">Courses</string>
+    <string name="stat_notes">Notes</string>
+    <string name="stat_tasks">Tasks</string>
 
     <!-- Courses -->
     <string name="courses_title">My Courses</string>

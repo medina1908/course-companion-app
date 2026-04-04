@@ -1,149 +1,192 @@
 package com.example.coursecompanionapp.presentation.ui.screen.notes
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.coursecompanionapp.R
+import com.example.coursecompanionapp.model.Note
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.screen.notes.component.NoteItem
-import com.example.coursecompanionapp.viewmodel.CourseViewModel
+import com.example.coursecompanionapp.model.HardcodedData
 
 @Composable
 fun NotesScreen(
-    viewModel: CourseViewModel,
     modifier: Modifier = Modifier
 ) {
-    val notes by viewModel.notes.collectAsState()
-    val noteTitle by viewModel.noteTitle.collectAsState()
-    val noteContent by viewModel.noteContent.collectAsState()
+    val notes = remember {
+        mutableStateListOf(*HardcodedData.notes.toTypedArray())
+    }
+
     var showForm by remember { mutableStateOf(false) }
+    var noteTitle by remember { mutableStateOf("") }
+    var noteContent by remember { mutableStateOf("") }
+
+    fun isFormValid() = noteTitle.isNotBlank() && noteContent.isNotBlank()
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
+            ExtendedFloatingActionButton(
                 onClick = { showForm = !showForm },
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Text(
-                    if (showForm) "✕" else "+",
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+                containerColor = MaterialTheme.colorScheme.primary,
+                icon = {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                },
+                text = {
+                    Text(
+                        if (showForm) "Close" else "Add Note",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            )
         }
     ) { padding ->
         Column(
             modifier = modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
         ) {
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primary)
                     .padding(dimensionResource(R.dimen.padding_medium)),
-                contentAlignment = Alignment.Center
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = stringResource(R.string.notes_title),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
+                Column {
+                    Text(
+                        text = "My Notes",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "${notes.size} notes",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.padding_medium))
+            )
+
             if (showForm) {
-                Card(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(dimensionResource(R.dimen.padding_medium)),
-                    shape = RoundedCornerShape(dimensionResource(R.dimen.card_radius)),
-                    elevation = CardDefaults.cardElevation(dimensionResource(R.dimen.card_elevation))
+                        .padding(dimensionResource(R.dimen.padding_medium))
                 ) {
-                    Column(modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium))) {
+                    Text(
+                        text = "New Note",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+
+                    OutlinedTextField(
+                        value = noteTitle,
+                        onValueChange = { noteTitle = it },
+                        label = { Text("Title") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+
+                    OutlinedTextField(
+                        value = noteContent,
+                        onValueChange = { noteContent = it },
+                        label = { Text("Content") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3
+                    )
+
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+
+                    if (noteTitle.isNotBlank() && noteContent.isBlank()) {
                         Text(
-                            text = stringResource(R.string.add_note),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            text = "Please enter note content!",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
                         )
-                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-
-                        OutlinedTextField(
-                            value = noteTitle,
-                            onValueChange = { viewModel.onNoteTitleChange(it) },
-                            label = { Text(stringResource(R.string.note_title)) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-
-                        OutlinedTextField(
-                            value = noteContent,
-                            onValueChange = { viewModel.onNoteContentChange(it) },
-                            label = { Text(stringResource(R.string.note_content)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            minLines = 3
-                        )
-                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-
-                        if (noteTitle.isNotBlank() && noteContent.isBlank()) {
-                            Text(
-                                text = stringResource(R.string.error_enter_content),
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-
-                        Button(
-                            onClick = {
-                                viewModel.addNote()
-                                showForm = false
-                            },
-                            enabled = viewModel.isNoteFormValid(),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Text(stringResource(R.string.save_note))
-                        }
                     }
+
+                    Button(
+                        onClick = {
+                            if (isFormValid()) {
+                                notes.add(
+                                    Note(
+                                        id = notes.size + 1,
+                                        title = noteTitle,
+                                        content = noteContent,
+                                        courseId = 1,
+                                        date = "04.04.2026"
+                                    )
+                                )
+                                noteTitle = ""
+                                noteContent = ""
+                                showForm = false
+                            }
+                        },
+                        enabled = isFormValid(),
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text("Save Note")
+                    }
+
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
                 }
             }
 
             if (notes.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(dimensionResource(R.dimen.padding_large)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = stringResource(R.string.no_notes),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "No notes yet!",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Tap Add Note to get started",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             } else {
-                LazyVerticalStaggeredGrid(
-                    columns = StaggeredGridCells.Fixed(2),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(dimensionResource(R.dimen.padding_medium)),
-                    horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
-                    verticalItemSpacing = dimensionResource(R.dimen.padding_small)
-                ) {
-                    itemsIndexed(notes) { index, note ->
-                        NoteItem(note = note, index = index)
-                    }
+                notes.forEachIndexed { index, note ->
+                    NoteItem(
+                        note = note,
+                        index = index,
+                        modifier = Modifier.padding(
+                            horizontal = dimensionResource(R.dimen.padding_medium)
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
                 }
             }
         }
@@ -154,6 +197,6 @@ fun NotesScreen(
 @Composable
 fun NotesScreenPreview() {
     CourseCompanionAppTheme {
-        NotesScreen(viewModel = viewModel())
+        NotesScreen()
     }
 }

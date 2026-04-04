@@ -1,34 +1,38 @@
 package com.example.coursecompanionapp.presentation.ui.screen.courses
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.coursecompanionapp.R
+import com.example.coursecompanionapp.model.Course
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.screen.courses.component.CourseItem
-import com.example.coursecompanionapp.viewmodel.CourseViewModel
+import com.example.coursecompanionapp.model.HardcodedData
 
 @Composable
 fun CoursesScreen(
-    viewModel: CourseViewModel,
     modifier: Modifier = Modifier
 ) {
-    val courses by viewModel.courses.collectAsState()
-    val courseName by viewModel.courseName.collectAsState()
-    val professor by viewModel.professor.collectAsState()
-    val credits by viewModel.credits.collectAsState()
+    val courses = remember {
+    mutableStateListOf(*HardcodedData.courses.toTypedArray())
+}
+
     var showForm by remember { mutableStateOf(false) }
+    var courseName by remember { mutableStateOf("") }
+    var professor by remember { mutableStateOf("") }
+    var credits by remember { mutableStateOf("") }
+
+    fun isFormValid() =
+        courseName.isNotBlank() &&
+                professor.isNotBlank() &&
+                credits.isNotBlank()
 
     Scaffold(
         floatingActionButton = {
@@ -48,87 +52,88 @@ fun CoursesScreen(
             modifier = modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primary)
-                    .padding(dimensionResource(R.dimen.padding_medium)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = stringResource(R.string.courses_title),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            }
+            Text(
+                text = "My Courses",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium))
+            )
 
             if (showForm) {
-                Card(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(dimensionResource(R.dimen.padding_medium)),
-                    shape = RoundedCornerShape(dimensionResource(R.dimen.card_radius)),
-                    elevation = CardDefaults.cardElevation(dimensionResource(R.dimen.card_elevation))
+                        .padding(horizontal = dimensionResource(R.dimen.padding_medium))
                 ) {
-                    Column(modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium))) {
+                    OutlinedTextField(
+                        value = courseName,
+                        onValueChange = { courseName = it },
+                        label = { Text("Course Name") },
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = courseName.isBlank() && courseName.isNotEmpty()
+                    )
+
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+
+                    OutlinedTextField(
+                        value = professor,
+                        onValueChange = { professor = it },
+                        label = { Text("Professor") },
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = professor.isBlank() && professor.isNotEmpty()
+                    )
+
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+
+                    OutlinedTextField(
+                        value = credits,
+                        onValueChange = {
+                            if (it.all { c -> c.isDigit() }) credits = it
+                        },
+                        label = { Text("Credits") },
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = credits.isBlank() && credits.isNotEmpty()
+                    )
+
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+
+                    if (courseName.isNotBlank() && professor.isNotBlank() && credits.isBlank()) {
                         Text(
-                            text = stringResource(R.string.add_course),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            text = "Please enter credits!",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
                         )
-                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-
-                        OutlinedTextField(
-                            value = courseName,
-                            onValueChange = { viewModel.onCourseNameChange(it) },
-                            label = { Text(stringResource(R.string.course_name)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = courseName.isBlank() && courseName.isNotEmpty()
-                        )
-                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-
-                        OutlinedTextField(
-                            value = professor,
-                            onValueChange = { viewModel.onProfessorChange(it) },
-                            label = { Text(stringResource(R.string.professor)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = professor.isBlank() && professor.isNotEmpty()
-                        )
-                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-
-                        OutlinedTextField(
-                            value = credits,
-                            onValueChange = { viewModel.onCreditsChange(it) },
-                            label = { Text(stringResource(R.string.credits)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = credits.isBlank() && credits.isNotEmpty()
-                        )
-                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-
-                        if (courseName.isNotBlank() && professor.isNotBlank() && credits.isBlank()) {
-                            Text(
-                                text = "Please enter credits!",
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-
-                        Button(
-                            onClick = {
-                                viewModel.addCourse()
-                                showForm = false
-                            },
-                            enabled = viewModel.isFormValid(),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Text(stringResource(R.string.save_course))
-                        }
                     }
+
+                    Button(
+                        onClick = {
+                            if (isFormValid()) {
+                                courses.add(
+                                    Course(
+                                        id = courses.size + 1,
+                                        name = courseName,
+                                        professor = professor,
+                                        credits = credits.toInt()
+                                    )
+                                )
+                                courseName = ""
+                                professor = ""
+                                credits = ""
+                                showForm = false
+                            }
+                        },
+                        enabled = isFormValid(),
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text("Save Course")
+                    }
+
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
                 }
             }
 
@@ -138,20 +143,14 @@ fun CoursesScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = stringResource(R.string.no_courses),
+                        text = "No courses yet! Tap + to add your first course.",
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(dimensionResource(R.dimen.padding_medium)),
-                    verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small))
-                ) {
-                    items(courses) { course ->
-                        CourseItem(course = course)
-                    }
+                courses.forEach { course ->
+                    CourseItem(course = course)
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
                 }
             }
         }
@@ -162,6 +161,6 @@ fun CoursesScreen(
 @Composable
 fun CoursesScreenPreview() {
     CourseCompanionAppTheme {
-        CoursesScreen(viewModel = viewModel())
+        CoursesScreen()
     }
 }

@@ -2,9 +2,8 @@ package com.example.coursecompanionapp.presentation.ui.screen.tasks
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,27 +11,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.coursecompanionapp.R
+import com.example.coursecompanionapp.model.HardcodedData
+import com.example.coursecompanionapp.model.Task
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.screen.tasks.component.TaskItem
-import com.example.coursecompanionapp.viewmodel.CourseViewModel
 
 @Composable
 fun TasksScreen(
-    viewModel: CourseViewModel,
     modifier: Modifier = Modifier
 ) {
-    val tasks by viewModel.tasks.collectAsState()
-    val taskTitle by viewModel.taskTitle.collectAsState()
-    val taskDueDate by viewModel.taskDueDate.collectAsState()
+    val tasks = remember {
+        mutableStateListOf(*HardcodedData.tasks.toTypedArray())
+    }
+
     var showForm by remember { mutableStateOf(false) }
+    var taskTitle by remember { mutableStateOf("") }
+    var taskDueDate by remember { mutableStateOf("") }
 
     val completedCount = tasks.count { it.isCompleted }
     val pendingCount = tasks.count { !it.isCompleted }
+    val completionRate = if (tasks.isEmpty()) 0f
+    else completedCount.toFloat() / tasks.size.toFloat()
+
+    fun isFormValid() = taskTitle.isNotBlank() && taskDueDate.isNotBlank()
 
     Scaffold(
         floatingActionButton = {
@@ -53,6 +57,7 @@ fun TasksScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .background(Color(0xFFF5F7FA))
+                .verticalScroll(rememberScrollState())
         ) {
             Box(
                 modifier = Modifier
@@ -88,92 +93,115 @@ fun TasksScreen(
                         StatBox("Completed", completedCount.toString())
                         StatBox("Total", tasks.size.toString())
                     }
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+                    Text(
+                        text = "Completion: ${(completionRate * 100).toInt()}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
                 }
             }
 
             if (showForm) {
-                Card(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(dimensionResource(R.dimen.padding_medium)),
-                    shape = RoundedCornerShape(dimensionResource(R.dimen.card_radius)),
-                    elevation = CardDefaults.cardElevation(dimensionResource(R.dimen.card_elevation))
+                        .padding(dimensionResource(R.dimen.padding_medium))
                 ) {
-                    Column(modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium))) {
+                    Text(
+                        text = "Add New Task",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+
+                    OutlinedTextField(
+                        value = taskTitle,
+                        onValueChange = { taskTitle = it },
+                        label = { Text("Task Title") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+
+                    OutlinedTextField(
+                        value = taskDueDate,
+                        onValueChange = { taskDueDate = it },
+                        label = { Text("Due Date (dd.mm.yyyy)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+
+                    if (taskTitle.isNotBlank() && taskDueDate.isBlank()) {
                         Text(
-                            text = stringResource(R.string.add_task),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            text = "Please enter due date!",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
                         )
-                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-                        OutlinedTextField(
-                            value = taskTitle,
-                            onValueChange = { viewModel.onTaskTitleChange(it) },
-                            label = { Text(stringResource(R.string.task_title)) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-                        OutlinedTextField(
-                            value = taskDueDate,
-                            onValueChange = { viewModel.onTaskDueDateChange(it) },
-                            label = { Text(stringResource(R.string.due_date)) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-                        if (taskTitle.isNotBlank() && taskDueDate.isBlank()) {
-                            Text(
-                                text = stringResource(R.string.error_enter_due_date),
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                        Button(
-                            onClick = {
-                                viewModel.addTask()
-                                showForm = false
-                            },
-                            enabled = viewModel.isTaskFormValid(),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Text(stringResource(R.string.save_task))
-                        }
                     }
+
+                    Button(
+                        onClick = {
+                            if (isFormValid()) {
+                                tasks.add(
+                                    Task(
+                                        id = tasks.size + 1,
+                                        title = taskTitle,
+                                        courseId = 1,
+                                        dueDate = taskDueDate,
+                                        isCompleted = false
+                                    )
+                                )
+                                taskTitle = ""
+                                taskDueDate = ""
+                                showForm = false
+                            }
+                        },
+                        enabled = isFormValid(),
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text("Save Task")
+                    }
+
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
                 }
             }
 
             if (tasks.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(dimensionResource(R.dimen.padding_large)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = stringResource(R.string.no_tasks),
+                        text = "No tasks yet! Tap + to add your first task.",
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(dimensionResource(R.dimen.padding_medium)),
+                Column(
+                    modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium)),
                     verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small))
                 ) {
-                    item {
-                        Text(
-                            text = "| My Tasks",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-                    }
-                    items(tasks) { task ->
+                    Text(
+                        text = "| My Tasks",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+                    tasks.forEach { task ->
                         TaskItem(
                             task = task,
-                            onToggle = { viewModel.toggleTaskCompleted(it) }
+                            onToggle = { id ->
+                                val index = tasks.indexOfFirst { it.id == id }
+                                if (index != -1) {
+                                    tasks[index] = tasks[index].copy(isCompleted = !tasks[index].isCompleted)
+                                }
+                            }
                         )
                     }
                 }
@@ -183,8 +211,15 @@ fun TasksScreen(
 }
 
 @Composable
-fun StatBox(title: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+fun StatBox(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Text(
             text = value,
             style = MaterialTheme.typography.titleLarge,
@@ -203,6 +238,6 @@ fun StatBox(title: String, value: String) {
 @Composable
 fun TasksScreenPreview() {
     CourseCompanionAppTheme {
-        TasksScreen(viewModel = viewModel())
+        TasksScreen()
     }
 }
