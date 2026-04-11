@@ -1,11 +1,12 @@
 package com.example.coursecompanionapp.presentation.ui.screen.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Star
@@ -17,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.coursecompanionapp.R
+import com.example.coursecompanionapp.model.HardcodedData
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.component.UserSectionCard
 import com.example.coursecompanionapp.presentation.ui.screen.home.component.DashboardHeader
@@ -84,11 +86,13 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
 
-            Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                achievements.forEach { achievement ->
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
+                contentPadding = PaddingValues(horizontal = dimensionResource(R.dimen.padding_small))
+            ) {
+                items(achievements) { achievement ->
                     Box(
                         modifier = Modifier
-                            .padding(end = dimensionResource(R.dimen.padding_small))
                             .clip(RoundedCornerShape(dimensionResource(R.dimen.card_radius)))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .padding(dimensionResource(R.dimen.padding_medium))
@@ -97,6 +101,45 @@ fun DashboardScreen(
                             Icon(Icons.Default.Face, contentDescription = null)
                             Spacer(modifier = Modifier.width(dimensionResource(R.dimen.padding_small)))
                             Text(achievement)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_large)))
+
+            Text(
+                text = "My Courses",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
+                contentPadding = PaddingValues(horizontal = dimensionResource(R.dimen.padding_small))
+            ) {
+                items(HardcodedData.courses) { course ->
+                    Card(
+                        modifier = Modifier.width(dimensionResource(R.dimen.avatar_size) * 2),
+                        shape = RoundedCornerShape(dimensionResource(R.dimen.card_radius)),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium))
+                        ) {
+                            Text(
+                                text = course.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            )
+                            Text(
+                                text = "${course.credits} credits",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }

@@ -10,7 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.coursecompanionapp.R
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
@@ -29,15 +28,15 @@ fun ProfileScreen(
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text(stringResource(R.string.logout)) },
-            text = { Text(stringResource(R.string.logout_message)) },
+            title = { Text("Log out?") },
+            text = { Text("Are you sure you want to log out?") },
             confirmButton = {
                 Button(
                     onClick = { showLogoutDialog = false },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error
                     )
-                ) { Text(stringResource(R.string.logout)) }
+                ) { Text("Log Out") }
             },
             dismissButton = {
                 TextButton(onClick = { showLogoutDialog = false }) {
@@ -53,8 +52,8 @@ fun ProfileScreen(
             .verticalScroll(rememberScrollState())
     ) {
         ProfileHeader(
-            name = stringResource(R.string.profile_name),
-            university = stringResource(R.string.profile_university)
+            name = "Medina Alić",
+            university = "International Burch University"
         )
 
         Column(modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium))) {
@@ -85,8 +84,8 @@ fun ProfileScreen(
             )
 
             AccountInfo(
-                email = stringResource(R.string.profile_email),
-                department = stringResource(R.string.profile_department)
+                email = "medina@stu.ibu.edu.ba",
+                department = "Software Engineering"
             )
 
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_large)))
@@ -104,7 +103,7 @@ fun ProfileScreen(
             ) {
                 Icon(Icons.Default.ExitToApp, contentDescription = null)
                 Spacer(modifier = Modifier.width(dimensionResource(R.dimen.padding_small)))
-                Text(stringResource(R.string.logout))
+                Text("Log Out")
             }
         }
     }

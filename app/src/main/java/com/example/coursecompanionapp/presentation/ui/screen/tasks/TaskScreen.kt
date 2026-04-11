@@ -2,8 +2,8 @@ package com.example.coursecompanionapp.presentation.ui.screen.tasks
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +18,9 @@ import com.example.coursecompanionapp.model.HardcodedData
 import com.example.coursecompanionapp.model.Task
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.screen.tasks.component.TaskItem
+
+private fun isTaskFormValid(title: String, dueDate: String) =
+    title.isNotBlank() && dueDate.isNotBlank()
 
 @Composable
 fun TasksScreen(
@@ -36,8 +39,6 @@ fun TasksScreen(
     val completionRate = if (tasks.isEmpty()) 0f
     else completedCount.toFloat() / tasks.size.toFloat()
 
-    fun isFormValid() = taskTitle.isNotBlank() && taskDueDate.isNotBlank()
-
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
@@ -52,158 +53,168 @@ fun TasksScreen(
             }
         }
     ) { padding ->
-        Column(
+        LazyColumn(
             modifier = modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF5F7FA))
-                .verticalScroll(rememberScrollState())
+                .background(Color(0xFFF5F7FA)),
+            contentPadding = PaddingValues(bottom = dimensionResource(R.dimen.padding_large))
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.tertiary
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.tertiary
+                                )
                             )
                         )
-                    )
-                    .padding(dimensionResource(R.dimen.padding_large))
-            ) {
-                Column {
-                    Text(
-                        text = "Hi Medina,",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Text(
-                        text = "You have $pendingCount pending, $completedCount completed!",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
-                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        StatBox("Pending", pendingCount.toString())
-                        StatBox("Completed", completedCount.toString())
-                        StatBox("Total", tasks.size.toString())
+                        .padding(dimensionResource(R.dimen.padding_large))
+                ) {
+                    Column {
+                        Text(
+                            text = "Hi Medina,",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "You have $pendingCount pending, $completedCount completed!",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            StatBox("Pending", pendingCount.toString())
+                            StatBox("Completed", completedCount.toString())
+                            StatBox("Total", tasks.size.toString())
+                        }
+                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+                        Text(
+                            text = "Completion: ${(completionRate * 100).toInt()}%",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
                     }
-                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-                    Text(
-                        text = "Completion: ${(completionRate * 100).toInt()}%",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
                 }
             }
 
             if (showForm) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(dimensionResource(R.dimen.padding_medium))
-                ) {
-                    Text(
-                        text = "Add New Task",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-
-                    OutlinedTextField(
-                        value = taskTitle,
-                        onValueChange = { taskTitle = it },
-                        label = { Text("Task Title") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-
-                    OutlinedTextField(
-                        value = taskDueDate,
-                        onValueChange = { taskDueDate = it },
-                        label = { Text("Due Date (dd.mm.yyyy)") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-
-                    if (taskTitle.isNotBlank() && taskDueDate.isBlank()) {
-                        Text(
-                            text = "Please enter due date!",
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-
-                    Button(
-                        onClick = {
-                            if (isFormValid()) {
-                                tasks.add(
-                                    Task(
-                                        id = tasks.size + 1,
-                                        title = taskTitle,
-                                        courseId = 1,
-                                        dueDate = taskDueDate,
-                                        isCompleted = false
-                                    )
-                                )
-                                taskTitle = ""
-                                taskDueDate = ""
-                                showForm = false
-                            }
-                        },
-                        enabled = isFormValid(),
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(dimensionResource(R.dimen.padding_medium))
                     ) {
-                        Text("Save Task")
-                    }
+                        Text(
+                            text = "Add New Task",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
 
-                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
+                        OutlinedTextField(
+                            value = taskTitle,
+                            onValueChange = { taskTitle = it },
+                            label = { Text("Task Title") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+
+                        OutlinedTextField(
+                            value = taskDueDate,
+                            onValueChange = { taskDueDate = it },
+                            label = { Text("Due Date (dd.mm.yyyy)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+
+                        if (taskTitle.isNotBlank() && taskDueDate.isBlank()) {
+                            Text(
+                                text = "Please enter due date!",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                if (isTaskFormValid(taskTitle, taskDueDate)) {
+                                    tasks.add(
+                                        Task(
+                                            id = tasks.size + 1,
+                                            title = taskTitle,
+                                            courseId = 1,
+                                            dueDate = taskDueDate,
+                                            isCompleted = false
+                                        )
+                                    )
+                                    taskTitle = ""
+                                    taskDueDate = ""
+                                    showForm = false
+                                }
+                            },
+                            enabled = isTaskFormValid(taskTitle, taskDueDate),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Text("Save Task")
+                        }
+
+                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
+                    }
                 }
             }
 
             if (tasks.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(dimensionResource(R.dimen.padding_large)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No tasks yet! Tap + to add your first task.",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(dimensionResource(R.dimen.padding_large)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No tasks yet! Tap + to add your first task.",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
                 }
             } else {
-                Column(
-                    modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium)),
-                    verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small))
-                ) {
+                item {
                     Text(
                         text = "| My Tasks",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium))
                     )
-                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-                    tasks.forEach { task ->
-                        TaskItem(
-                            task = task,
-                            onToggle = { id ->
-                                val index = tasks.indexOfFirst { it.id == id }
-                                if (index != -1) {
-                                    tasks[index] = tasks[index].copy(isCompleted = !tasks[index].isCompleted)
-                                }
+                }
+                items(
+                    items = tasks,
+                    key = { task -> task.id }
+                ) { task ->
+                    TaskItem(
+                        task = task,
+                        onToggle = { id ->
+                            val index = tasks.indexOfFirst { it.id == id }
+                            if (index != -1) {
+                                tasks[index] = tasks[index].copy(isCompleted = !tasks[index].isCompleted)
                             }
+                        },
+                        modifier = Modifier.padding(
+                            horizontal = dimensionResource(R.dimen.padding_medium),
+                            vertical = dimensionResource(R.dimen.padding_small)
                         )
-                    }
+                    )
                 }
             }
         }

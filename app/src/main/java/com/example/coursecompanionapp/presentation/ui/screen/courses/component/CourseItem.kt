@@ -1,10 +1,11 @@
 package com.example.coursecompanionapp.presentation.ui.screen.courses.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.dimensionResource
@@ -17,8 +18,36 @@ fun CourseItem(
     course: Course,
     modifier: Modifier = Modifier
 ) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = {
+                Text(
+                    text = course.name,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column {
+                    Text("Professor: ${course.professor}")
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+                    Text("Credits: ${course.credits}")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
+
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { showDialog = true },
         shape = RoundedCornerShape(dimensionResource(R.dimen.card_radius)),
         elevation = CardDefaults.cardElevation(
             defaultElevation = dimensionResource(R.dimen.card_elevation)
