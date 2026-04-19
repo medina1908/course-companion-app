@@ -1,5 +1,6 @@
 package com.example.coursecompanionapp.presentation.ui.screen.notes.component
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -8,9 +9,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.coursecompanionapp.R
 import com.example.coursecompanionapp.model.Note
+import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 
 val noteColors = listOf(
     Color(0xFFFFD6D6),
@@ -25,14 +29,17 @@ val noteColors = listOf(
 fun NoteItem(
     note: Note,
     index: Int = 0,
+    onNoteClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val cardColor = noteColors[index % noteColors.size]
 
     Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(dimensionResource(R.dimen.card_radius)),
-        elevation = CardDefaults.cardElevation(defaultElevation = dimensionResource(R.dimen.card_elevation)),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onNoteClick() },
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(containerColor = cardColor)
     ) {
         Column(modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium))) {
@@ -56,5 +63,22 @@ fun NoteItem(
                 color = Color(0xFF888888)
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun NoteItemPreview() {
+    CourseCompanionAppTheme {
+        NoteItem(
+            note = Note(
+                id = 1,
+                title = "Jetpack Compose Basics",
+                content = "Column, Row, Box are main layout elements...",
+                courseId = 1,
+                date = "25.03.2026"
+            ),
+            index = 0
+        )
     }
 }

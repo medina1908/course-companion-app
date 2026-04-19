@@ -21,8 +21,10 @@ import com.example.coursecompanionapp.presentation.ui.screen.courses.component.C
 private fun isCourseFormValid(name: String, professor: String, credits: String) =
     name.isNotBlank() && professor.isNotBlank() && credits.isNotBlank()
 
+
 @Composable
 fun CoursesScreen(
+    onCourseClick: (Int, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val courses = remember {
@@ -40,10 +42,60 @@ fun CoursesScreen(
                 it.professor.contains(searchQuery, ignoreCase = true)
     }
 
+    CoursesScreen(
+        courses = filteredCourses,
+        showForm = showForm,
+        courseName = courseName,
+        professor = professor,
+        credits = credits,
+        searchQuery = searchQuery,
+        onCourseClick = onCourseClick,
+        onShowFormToggle = { showForm = !showForm },
+        onCourseNameChange = { courseName = it },
+        onProfessorChange = { professor = it },
+        onCreditsChange = { if (it.all { c -> c.isDigit() }) credits = it },
+        onSearchQueryChange = { searchQuery = it },
+        onSaveCourse = {
+            if (isCourseFormValid(courseName, professor, credits)) {
+                courses.add(
+                    Course(
+                        id = courses.size + 1,
+                        name = courseName,
+                        professor = professor,
+                        credits = credits.toInt()
+                    )
+                )
+                courseName = ""
+                professor = ""
+                credits = ""
+                showForm = false
+            }
+        },
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun CoursesScreen(
+    courses: List<Course>,
+    showForm: Boolean,
+    courseName: String,
+    professor: String,
+    credits: String,
+    searchQuery: String,
+    onCourseClick: (Int, String) -> Unit,
+    onShowFormToggle: () -> Unit,
+    onCourseNameChange: (String) -> Unit,
+    onProfessorChange: (String) -> Unit,
+    onCreditsChange: (String) -> Unit,
+    onSearchQueryChange: (String) -> Unit,
+    onSaveCourse: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showForm = !showForm },
+                onClick = onShowFormToggle,
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Text(
@@ -72,7 +124,7 @@ fun CoursesScreen(
             item {
                 OutlinedTextField(
                     value = searchQuery,
-                    onValueChange = { searchQuery = it },
+                    onValueChange = onSearchQueryChange,
                     label = { Text("Search courses...") },
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = null)
@@ -93,7 +145,7 @@ fun CoursesScreen(
                     ) {
                         OutlinedTextField(
                             value = courseName,
-                            onValueChange = { courseName = it },
+                            onValueChange = onCourseNameChange,
                             label = { Text("Course Name") },
                             modifier = Modifier.fillMaxWidth(),
                             isError = courseName.isBlank() && courseName.isNotEmpty()
@@ -103,7 +155,7 @@ fun CoursesScreen(
 
                         OutlinedTextField(
                             value = professor,
-                            onValueChange = { professor = it },
+                            onValueChange = onProfessorChange,
                             label = { Text("Professor") },
                             modifier = Modifier.fillMaxWidth(),
                             isError = professor.isBlank() && professor.isNotEmpty()
@@ -113,9 +165,7 @@ fun CoursesScreen(
 
                         OutlinedTextField(
                             value = credits,
-                            onValueChange = {
-                                if (it.all { c -> c.isDigit() }) credits = it
-                            },
+                            onValueChange = onCreditsChange,
                             label = { Text("Credits") },
                             modifier = Modifier.fillMaxWidth(),
                             isError = credits.isBlank() && credits.isNotEmpty()
@@ -132,22 +182,7 @@ fun CoursesScreen(
                         }
 
                         Button(
-                            onClick = {
-                                if (isCourseFormValid(courseName, professor, credits)) {
-                                    courses.add(
-                                        Course(
-                                            id = courses.size + 1,
-                                            name = courseName,
-                                            professor = professor,
-                                            credits = credits.toInt()
-                                        )
-                                    )
-                                    courseName = ""
-                                    professor = ""
-                                    credits = ""
-                                    showForm = false
-                                }
-                            },
+                            onClick = onSaveCourse,
                             enabled = isCourseFormValid(courseName, professor, credits),
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
@@ -162,7 +197,7 @@ fun CoursesScreen(
                 }
             }
 
-            if (filteredCourses.isEmpty()) {
+            if (courses.isEmpty()) {
                 item {
                     Box(
                         modifier = Modifier
@@ -179,11 +214,12 @@ fun CoursesScreen(
                 }
             } else {
                 items(
-                    items = filteredCourses,
+                    items = courses,
                     key = { course -> course.id }
                 ) { course ->
                     CourseItem(
                         course = course,
+                        onCourseClick = { onCourseClick(course.id, course.name) },
                         modifier = Modifier.padding(
                             horizontal = dimensionResource(R.dimen.padding_medium),
                             vertical = dimensionResource(R.dimen.padding_small)

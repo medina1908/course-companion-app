@@ -22,6 +22,7 @@ import com.example.coursecompanionapp.presentation.ui.screen.tasks.component.Tas
 private fun isTaskFormValid(title: String, dueDate: String) =
     title.isNotBlank() && dueDate.isNotBlank()
 
+
 @Composable
 fun TasksScreen(
     modifier: Modifier = Modifier
@@ -39,10 +40,63 @@ fun TasksScreen(
     val completionRate = if (tasks.isEmpty()) 0f
     else completedCount.toFloat() / tasks.size.toFloat()
 
+    TasksScreen(
+        tasks = tasks,
+        showForm = showForm,
+        taskTitle = taskTitle,
+        taskDueDate = taskDueDate,
+        completedCount = completedCount,
+        pendingCount = pendingCount,
+        completionRate = completionRate,
+        onShowFormToggle = { showForm = !showForm },
+        onTaskTitleChange = { taskTitle = it },
+        onTaskDueDateChange = { taskDueDate = it },
+        onSaveTask = {
+            if (isTaskFormValid(taskTitle, taskDueDate)) {
+                tasks.add(
+                    Task(
+                        id = tasks.size + 1,
+                        title = taskTitle,
+                        courseId = 1,
+                        dueDate = taskDueDate,
+                        isCompleted = false
+                    )
+                )
+                taskTitle = ""
+                taskDueDate = ""
+                showForm = false
+            }
+        },
+        onToggleTask = { id ->
+            val index = tasks.indexOfFirst { it.id == id }
+            if (index != -1) {
+                tasks[index] = tasks[index].copy(isCompleted = !tasks[index].isCompleted)
+            }
+        },
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun TasksScreen(
+    tasks: List<Task>,
+    showForm: Boolean,
+    taskTitle: String,
+    taskDueDate: String,
+    completedCount: Int,
+    pendingCount: Int,
+    completionRate: Float,
+    onShowFormToggle: () -> Unit,
+    onTaskTitleChange: (String) -> Unit,
+    onTaskDueDateChange: (String) -> Unit,
+    onSaveTask: () -> Unit,
+    onToggleTask: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showForm = !showForm },
+                onClick = onShowFormToggle,
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Text(
@@ -121,7 +175,7 @@ fun TasksScreen(
 
                         OutlinedTextField(
                             value = taskTitle,
-                            onValueChange = { taskTitle = it },
+                            onValueChange = onTaskTitleChange,
                             label = { Text("Task Title") },
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -129,7 +183,7 @@ fun TasksScreen(
 
                         OutlinedTextField(
                             value = taskDueDate,
-                            onValueChange = { taskDueDate = it },
+                            onValueChange = onTaskDueDateChange,
                             label = { Text("Due Date (dd.mm.yyyy)") },
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -144,22 +198,7 @@ fun TasksScreen(
                         }
 
                         Button(
-                            onClick = {
-                                if (isTaskFormValid(taskTitle, taskDueDate)) {
-                                    tasks.add(
-                                        Task(
-                                            id = tasks.size + 1,
-                                            title = taskTitle,
-                                            courseId = 1,
-                                            dueDate = taskDueDate,
-                                            isCompleted = false
-                                        )
-                                    )
-                                    taskTitle = ""
-                                    taskDueDate = ""
-                                    showForm = false
-                                }
-                            },
+                            onClick = onSaveTask,
                             enabled = isTaskFormValid(taskTitle, taskDueDate),
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
@@ -204,12 +243,7 @@ fun TasksScreen(
                 ) { task ->
                     TaskItem(
                         task = task,
-                        onToggle = { id ->
-                            val index = tasks.indexOfFirst { it.id == id }
-                            if (index != -1) {
-                                tasks[index] = tasks[index].copy(isCompleted = !tasks[index].isCompleted)
-                            }
-                        },
+                        onToggle = onToggleTask,
                         modifier = Modifier.padding(
                             horizontal = dimensionResource(R.dimen.padding_medium),
                             vertical = dimensionResource(R.dimen.padding_small)

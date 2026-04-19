@@ -18,10 +18,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.coursecompanionapp.R
+import com.example.coursecompanionapp.model.Course
 import com.example.coursecompanionapp.model.HardcodedData
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.component.UserSectionCard
 import com.example.coursecompanionapp.presentation.ui.screen.home.component.DashboardHeader
+import com.example.coursecompanionapp.presentation.ui.screen.home.component.StatItem
 
 @Composable
 fun DashboardScreen(
@@ -37,6 +39,21 @@ fun DashboardScreen(
         "3 Day Streak"
     )
 
+    DashboardScreen(
+        tasks = tasks,
+        achievements = achievements,
+        courses = HardcodedData.courses,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun DashboardScreen(
+    tasks: List<String>,
+    achievements: List<String>,
+    courses: List<Course>,
+    modifier: Modifier = Modifier
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -119,7 +136,7 @@ fun DashboardScreen(
                 horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
                 contentPadding = PaddingValues(horizontal = dimensionResource(R.dimen.padding_small))
             ) {
-                items(HardcodedData.courses) { course ->
+                items(courses) { course ->
                     Card(
                         modifier = Modifier.width(dimensionResource(R.dimen.avatar_size) * 2),
                         shape = RoundedCornerShape(dimensionResource(R.dimen.card_radius)),
@@ -160,31 +177,6 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_large)))
         }
-    }
-}
-
-@Composable
-fun StatItem(
-    title: String,
-    progress: Float,
-    value: String,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier.padding(vertical = dimensionResource(R.dimen.padding_small))) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(title)
-            Text(value)
-        }
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(dimensionResource(R.dimen.padding_small))
-                .clip(RoundedCornerShape(dimensionResource(R.dimen.card_radius)))
-        )
     }
 }
 

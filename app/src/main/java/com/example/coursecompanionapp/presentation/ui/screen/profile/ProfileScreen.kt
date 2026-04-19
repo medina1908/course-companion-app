@@ -17,6 +17,7 @@ import com.example.coursecompanionapp.presentation.ui.screen.profile.component.A
 import com.example.coursecompanionapp.presentation.ui.screen.profile.component.NotificationSettings
 import com.example.coursecompanionapp.presentation.ui.screen.profile.component.ProfileHeader
 
+
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier
@@ -25,21 +26,44 @@ fun ProfileScreen(
     var emailUpdates by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
 
+    ProfileScreen(
+        notificationsEnabled = notificationsEnabled,
+        emailUpdates = emailUpdates,
+        showLogoutDialog = showLogoutDialog,
+        onNotificationsChange = { notificationsEnabled = it },
+        onEmailUpdatesChange = { emailUpdates = it },
+        onShowLogoutDialog = { showLogoutDialog = true },
+        onDismissLogoutDialog = { showLogoutDialog = false },
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun ProfileScreen(
+    notificationsEnabled: Boolean,
+    emailUpdates: Boolean,
+    showLogoutDialog: Boolean,
+    onNotificationsChange: (Boolean) -> Unit,
+    onEmailUpdatesChange: (Boolean) -> Unit,
+    onShowLogoutDialog: () -> Unit,
+    onDismissLogoutDialog: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     if (showLogoutDialog) {
         AlertDialog(
-            onDismissRequest = { showLogoutDialog = false },
+            onDismissRequest = onDismissLogoutDialog,
             title = { Text("Log out?") },
             text = { Text("Are you sure you want to log out?") },
             confirmButton = {
                 Button(
-                    onClick = { showLogoutDialog = false },
+                    onClick = onDismissLogoutDialog,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error
                     )
                 ) { Text("Log Out") }
             },
             dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
+                TextButton(onClick = onDismissLogoutDialog) {
                     Text("Cancel")
                 }
             }
@@ -70,8 +94,8 @@ fun ProfileScreen(
             NotificationSettings(
                 notificationsEnabled = notificationsEnabled,
                 emailUpdates = emailUpdates,
-                onNotificationsChange = { notificationsEnabled = it },
-                onEmailUpdatesChange = { emailUpdates = it }
+                onNotificationsChange = onNotificationsChange,
+                onEmailUpdatesChange = onEmailUpdatesChange
             )
 
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
@@ -91,7 +115,7 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_large)))
 
             OutlinedButton(
-                onClick = { showLogoutDialog = true },
+                onClick = onShowLogoutDialog,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = MaterialTheme.colorScheme.error

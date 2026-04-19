@@ -24,6 +24,7 @@ private fun isNoteFormValid(title: String, content: String) =
 
 @Composable
 fun NotesScreen(
+    onNoteClick: (String, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val notes = remember {
@@ -40,10 +41,59 @@ fun NotesScreen(
                 it.content.contains(searchQuery, ignoreCase = true)
     }
 
+    NotesScreen(
+        notes = filteredNotes,
+        totalNotes = notes.size,
+        showForm = showForm,
+        noteTitle = noteTitle,
+        noteContent = noteContent,
+        searchQuery = searchQuery,
+        onNoteClick = onNoteClick,
+        onShowFormToggle = { showForm = !showForm },
+        onNoteTitleChange = { noteTitle = it },
+        onNoteContentChange = { noteContent = it },
+        onSearchQueryChange = { searchQuery = it },
+        onSaveNote = {
+            if (isNoteFormValid(noteTitle, noteContent)) {
+                notes.add(
+                    Note(
+                        id = notes.size + 1,
+                        title = noteTitle,
+                        content = noteContent,
+                        courseId = 1,
+                        date = "04.04.2026"
+                    )
+                )
+                noteTitle = ""
+                noteContent = ""
+                showForm = false
+            }
+        },
+        modifier = modifier
+    )
+}
+
+// STATELESS
+@Composable
+private fun NotesScreen(
+    notes: List<Note>,
+    totalNotes: Int,
+    showForm: Boolean,
+    noteTitle: String,
+    noteContent: String,
+    searchQuery: String,
+    onNoteClick: (String, String) -> Unit,
+    onShowFormToggle: () -> Unit,
+    onNoteTitleChange: (String) -> Unit,
+    onNoteContentChange: (String) -> Unit,
+    onSearchQueryChange: (String) -> Unit,
+    onSaveNote: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Scaffold(
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { showForm = !showForm },
+                onClick = onShowFormToggle,
                 containerColor = MaterialTheme.colorScheme.primary,
                 icon = {
                     Icon(
@@ -82,7 +132,7 @@ fun NotesScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "${notes.size} notes",
+                            text = "$totalNotes notes",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -91,7 +141,7 @@ fun NotesScreen(
 
                 OutlinedTextField(
                     value = searchQuery,
-                    onValueChange = { searchQuery = it },
+                    onValueChange = onSearchQueryChange,
                     label = { Text("Search notes...") },
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = null)
@@ -125,7 +175,7 @@ fun NotesScreen(
 
                         OutlinedTextField(
                             value = noteTitle,
-                            onValueChange = { noteTitle = it },
+                            onValueChange = onNoteTitleChange,
                             label = { Text("Title") },
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -134,7 +184,7 @@ fun NotesScreen(
 
                         OutlinedTextField(
                             value = noteContent,
-                            onValueChange = { noteContent = it },
+                            onValueChange = onNoteContentChange,
                             label = { Text("Content") },
                             modifier = Modifier.fillMaxWidth(),
                             minLines = 3
@@ -151,22 +201,7 @@ fun NotesScreen(
                         }
 
                         Button(
-                            onClick = {
-                                if (isNoteFormValid(noteTitle, noteContent)) {
-                                    notes.add(
-                                        Note(
-                                            id = notes.size + 1,
-                                            title = noteTitle,
-                                            content = noteContent,
-                                            courseId = 1,
-                                            date = "04.04.2026"
-                                        )
-                                    )
-                                    noteTitle = ""
-                                    noteContent = ""
-                                    showForm = false
-                                }
-                            },
+                            onClick = onSaveNote,
                             enabled = isNoteFormValid(noteTitle, noteContent),
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
@@ -183,7 +218,7 @@ fun NotesScreen(
                 }
             }
 
-            if (filteredNotes.isEmpty()) {
+            if (notes.isEmpty()) {
                 item {
                     Box(
                         modifier = Modifier
@@ -210,12 +245,13 @@ fun NotesScreen(
                 }
             } else {
                 itemsIndexed(
-                    items = filteredNotes,
+                    items = notes,
                     key = { _, note -> note.id }
                 ) { index, note ->
                     NoteItem(
                         note = note,
                         index = index,
+                        onNoteClick = { onNoteClick(note.title, note.content) },
                         modifier = Modifier.padding(
                             horizontal = dimensionResource(R.dimen.padding_medium),
                             vertical = dimensionResource(R.dimen.padding_small)
