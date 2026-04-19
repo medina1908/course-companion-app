@@ -20,10 +20,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.coursecompanionapp.R
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.screen.login.component.LoginButton
-import com.example.coursecompanionapp.presentation.ui.screen.login.component.LoginHeader
+
+private fun isEmailValid(email: String) = email.contains("stu.ibu.edu.ba") && email.isNotBlank()
+private fun isPasswordValid(password: String) = password.length >= 8
 
 @Composable
 fun LoginScreen(
+    onLoginClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var email by remember { mutableStateOf("") }
@@ -31,9 +34,44 @@ fun LoginScreen(
     var emailError by remember { mutableStateOf(false) }
     var passwordError by remember { mutableStateOf(false) }
 
-    fun isEmailValid(email: String) = email.contains("stu.ibu.edu.ba") && email.isNotBlank()
-    fun isPasswordValid(password: String) = password.length >= 8
+    LoginScreen(
+        email = email,
+        password = password,
+        emailError = emailError,
+        passwordError = passwordError,
+        onEmailChange = {
+            email = it
+            emailError = false
+        },
+        onPasswordChange = {
+            password = it
+            passwordError = false
+        },
+        onLoginClick = {
+            emailError = !isEmailValid(email)
+            passwordError = !isPasswordValid(password)
+            if (isEmailValid(email) && isPasswordValid(password)) {
+                onLoginClick()
+            }
+        },
+        isLoginEnabled = isEmailValid(email) && isPasswordValid(password),
+        modifier = modifier
+    )
+}
 
+
+@Composable
+private fun LoginScreen(
+    email: String,
+    password: String,
+    emailError: Boolean,
+    passwordError: Boolean,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onLoginClick: () -> Unit,
+    isLoginEnabled: Boolean,
+    modifier: Modifier = Modifier
+) {
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -99,10 +137,7 @@ fun LoginScreen(
 
                     OutlinedTextField(
                         value = email,
-                        onValueChange = {
-                            email = it
-                            emailError = false
-                        },
+                        onValueChange = onEmailChange,
                         label = { Text("Email") },
                         leadingIcon = {
                             Icon(
@@ -114,7 +149,7 @@ fun LoginScreen(
                         isError = emailError,
                         supportingText = {
                             if (emailError) Text(
-                                "Please enter a valid email!",
+                                "Please enter a valid IBU email!",
                                 color = MaterialTheme.colorScheme.error
                             )
                         },
@@ -126,10 +161,7 @@ fun LoginScreen(
 
                     OutlinedTextField(
                         value = password,
-                        onValueChange = {
-                            password = it
-                            passwordError = false
-                        },
+                        onValueChange = onPasswordChange,
                         label = { Text("Password") },
                         leadingIcon = {
                             Icon(
@@ -142,7 +174,7 @@ fun LoginScreen(
                         isError = passwordError,
                         supportingText = {
                             if (passwordError) Text(
-                                "Password must be at least 6 characters!",
+                                "Password must be at least 8 characters!",
                                 color = MaterialTheme.colorScheme.error
                             )
                         },
@@ -153,11 +185,8 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
 
                     LoginButton(
-                        enabled = isEmailValid(email) && isPasswordValid(password),
-                        onClick = {
-                            emailError = !isEmailValid(email)
-                            passwordError = !isPasswordValid(password)
-                        }
+                        enabled = isLoginEnabled,
+                        onClick = onLoginClick
                     )
 
                     Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))

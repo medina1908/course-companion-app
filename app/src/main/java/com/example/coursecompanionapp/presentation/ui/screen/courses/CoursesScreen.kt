@@ -1,39 +1,101 @@
 package com.example.coursecompanionapp.presentation.ui.screen.courses
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.coursecompanionapp.R
+import com.example.coursecompanionapp.model.Course
+import com.example.coursecompanionapp.model.HardcodedData
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.screen.courses.component.CourseItem
-import com.example.coursecompanionapp.viewmodel.CourseViewModel
+
+private fun isCourseFormValid(name: String, professor: String, credits: String) =
+    name.isNotBlank() && professor.isNotBlank() && credits.isNotBlank()
+
 
 @Composable
 fun CoursesScreen(
-    viewModel: CourseViewModel,
+    onCourseClick: (Int, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
-    val courses by viewModel.courses.collectAsState()
-    val courseName by viewModel.courseName.collectAsState()
-    val professor by viewModel.professor.collectAsState()
-    val credits by viewModel.credits.collectAsState()
-    var showForm by remember { mutableStateOf(false) }
+    val courses = remember {
+        mutableStateListOf(*HardcodedData.courses.toTypedArray())
+    }
 
+    var showForm by remember { mutableStateOf(false) }
+    var courseName by remember { mutableStateOf("") }
+    var professor by remember { mutableStateOf("") }
+    var credits by remember { mutableStateOf("") }
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredCourses = courses.filter {
+        it.name.contains(searchQuery, ignoreCase = true) ||
+                it.professor.contains(searchQuery, ignoreCase = true)
+    }
+
+    CoursesScreen(
+        courses = filteredCourses,
+        showForm = showForm,
+        courseName = courseName,
+        professor = professor,
+        credits = credits,
+        searchQuery = searchQuery,
+        onCourseClick = onCourseClick,
+        onShowFormToggle = { showForm = !showForm },
+        onCourseNameChange = { courseName = it },
+        onProfessorChange = { professor = it },
+        onCreditsChange = { if (it.all { c -> c.isDigit() }) credits = it },
+        onSearchQueryChange = { searchQuery = it },
+        onSaveCourse = {
+            if (isCourseFormValid(courseName, professor, credits)) {
+                courses.add(
+                    Course(
+                        id = courses.size + 1,
+                        name = courseName,
+                        professor = professor,
+                        credits = credits.toInt()
+                    )
+                )
+                courseName = ""
+                professor = ""
+                credits = ""
+                showForm = false
+            }
+        },
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun CoursesScreen(
+    courses: List<Course>,
+    showForm: Boolean,
+    courseName: String,
+    professor: String,
+    credits: String,
+    searchQuery: String,
+    onCourseClick: (Int, String) -> Unit,
+    onShowFormToggle: () -> Unit,
+    onCourseNameChange: (String) -> Unit,
+    onProfessorChange: (String) -> Unit,
+    onCreditsChange: (String) -> Unit,
+    onSearchQueryChange: (String) -> Unit,
+    onSaveCourse: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showForm = !showForm },
+                onClick = onShowFormToggle,
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Text(
@@ -44,67 +106,71 @@ fun CoursesScreen(
             }
         }
     ) { padding ->
-        Column(
+        LazyColumn(
             modifier = modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(padding),
+            contentPadding = PaddingValues(bottom = dimensionResource(R.dimen.padding_large))
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primary)
-                    .padding(dimensionResource(R.dimen.padding_medium)),
-                contentAlignment = Alignment.Center
-            ) {
+            item {
                 Text(
-                    text = stringResource(R.string.courses_title),
+                    text = "My Courses",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary
+                    modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium))
                 )
             }
 
-            if (showForm) {
-                Card(
+            item {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    label = { Text("Search courses...") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = null)
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(dimensionResource(R.dimen.padding_medium)),
-                    shape = RoundedCornerShape(dimensionResource(R.dimen.card_radius)),
-                    elevation = CardDefaults.cardElevation(dimensionResource(R.dimen.card_elevation))
-                ) {
-                    Column(modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium))) {
-                        Text(
-                            text = stringResource(R.string.add_course),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+                        .padding(horizontal = dimensionResource(R.dimen.padding_medium))
+                )
+                Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+            }
 
+            if (showForm) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = dimensionResource(R.dimen.padding_medium))
+                    ) {
                         OutlinedTextField(
                             value = courseName,
-                            onValueChange = { viewModel.onCourseNameChange(it) },
-                            label = { Text(stringResource(R.string.course_name)) },
+                            onValueChange = onCourseNameChange,
+                            label = { Text("Course Name") },
                             modifier = Modifier.fillMaxWidth(),
                             isError = courseName.isBlank() && courseName.isNotEmpty()
                         )
+
                         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
 
                         OutlinedTextField(
                             value = professor,
-                            onValueChange = { viewModel.onProfessorChange(it) },
-                            label = { Text(stringResource(R.string.professor)) },
+                            onValueChange = onProfessorChange,
+                            label = { Text("Professor") },
                             modifier = Modifier.fillMaxWidth(),
                             isError = professor.isBlank() && professor.isNotEmpty()
                         )
+
                         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
 
                         OutlinedTextField(
                             value = credits,
-                            onValueChange = { viewModel.onCreditsChange(it) },
-                            label = { Text(stringResource(R.string.credits)) },
+                            onValueChange = onCreditsChange,
+                            label = { Text("Credits") },
                             modifier = Modifier.fillMaxWidth(),
                             isError = credits.isBlank() && credits.isNotEmpty()
                         )
+
                         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
 
                         if (courseName.isNotBlank() && professor.isNotBlank() && credits.isBlank()) {
@@ -116,42 +182,49 @@ fun CoursesScreen(
                         }
 
                         Button(
-                            onClick = {
-                                viewModel.addCourse()
-                                showForm = false
-                            },
-                            enabled = viewModel.isFormValid(),
+                            onClick = onSaveCourse,
+                            enabled = isCourseFormValid(courseName, professor, credits),
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary
                             )
                         ) {
-                            Text(stringResource(R.string.save_course))
+                            Text("Save Course")
                         }
+
+                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
                     }
                 }
             }
 
             if (courses.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = stringResource(R.string.no_courses),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(dimensionResource(R.dimen.padding_large)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (searchQuery.isBlank()) "No courses yet! Tap + to add your first course."
+                            else "No courses found for \"$searchQuery\"",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(dimensionResource(R.dimen.padding_medium)),
-                    verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small))
-                ) {
-                    items(courses) { course ->
-                        CourseItem(course = course)
-                    }
+                items(
+                    items = courses,
+                    key = { course -> course.id }
+                ) { course ->
+                    CourseItem(
+                        course = course,
+                        onCourseClick = { onCourseClick(course.id, course.name) },
+                        modifier = Modifier.padding(
+                            horizontal = dimensionResource(R.dimen.padding_medium),
+                            vertical = dimensionResource(R.dimen.padding_small)
+                        )
+                    )
                 }
             }
         }
@@ -162,6 +235,6 @@ fun CoursesScreen(
 @Composable
 fun CoursesScreenPreview() {
     CourseCompanionAppTheme {
-        CoursesScreen(viewModel = viewModel())
+        CoursesScreen()
     }
 }
