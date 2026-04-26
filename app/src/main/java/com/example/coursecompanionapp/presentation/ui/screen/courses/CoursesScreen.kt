@@ -12,65 +12,41 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.coursecompanionapp.R
 import com.example.coursecompanionapp.model.Course
-import com.example.coursecompanionapp.model.HardcodedData
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.screen.courses.component.CourseItem
+import com.example.coursecompanionapp.presentation.viewmodel.courses.CoursesViewModel
 
 private fun isCourseFormValid(name: String, professor: String, credits: String) =
     name.isNotBlank() && professor.isNotBlank() && credits.isNotBlank()
 
-
 @Composable
 fun CoursesScreen(
     onCourseClick: (Int, String) -> Unit = { _, _ -> },
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: CoursesViewModel = viewModel()
 ) {
-    val courses = remember {
-        mutableStateListOf(*HardcodedData.courses.toTypedArray())
-    }
-
-    var showForm by remember { mutableStateOf(false) }
-    var courseName by remember { mutableStateOf("") }
-    var professor by remember { mutableStateOf("") }
-    var credits by remember { mutableStateOf("") }
-    var searchQuery by remember { mutableStateOf("") }
-
-    val filteredCourses = courses.filter {
-        it.name.contains(searchQuery, ignoreCase = true) ||
-                it.professor.contains(searchQuery, ignoreCase = true)
-    }
+    val state = viewModel.uiState.collectAsState().value
 
     CoursesScreen(
-        courses = filteredCourses,
-        showForm = showForm,
-        courseName = courseName,
-        professor = professor,
-        credits = credits,
-        searchQuery = searchQuery,
-        onCourseClick = onCourseClick,
-        onShowFormToggle = { showForm = !showForm },
-        onCourseNameChange = { courseName = it },
-        onProfessorChange = { professor = it },
-        onCreditsChange = { if (it.all { c -> c.isDigit() }) credits = it },
-        onSearchQueryChange = { searchQuery = it },
-        onSaveCourse = {
-            if (isCourseFormValid(courseName, professor, credits)) {
-                courses.add(
-                    Course(
-                        id = courses.size + 1,
-                        name = courseName,
-                        professor = professor,
-                        credits = credits.toInt()
-                    )
-                )
-                courseName = ""
-                professor = ""
-                credits = ""
-                showForm = false
-            }
+        courses = state.courses.filter {
+            it.name.contains(state.searchQuery, ignoreCase = true) ||
+                    it.professor.contains(state.searchQuery, ignoreCase = true)
         },
+        showForm = state.showForm,
+        courseName = state.courseName,
+        professor = state.professor,
+        credits = state.credits,
+        searchQuery = state.searchQuery,
+        onCourseClick = onCourseClick,
+        onShowFormToggle = { viewModel.onToggleForm() },
+        onCourseNameChange = { viewModel.onCourseNameChange(it) },
+        onProfessorChange = { viewModel.onProfessorChange(it) },
+        onCreditsChange = { viewModel.onCreditsChange(it) },
+        onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
+        onSaveCourse = { viewModel.onSaveCourse() },
         modifier = modifier
     )
 }
@@ -106,12 +82,14 @@ private fun CoursesScreen(
             }
         }
     ) { padding ->
+
         LazyColumn(
             modifier = modifier
                 .fillMaxSize()
                 .padding(padding),
             contentPadding = PaddingValues(bottom = dimensionResource(R.dimen.padding_large))
         ) {
+
             item {
                 Text(
                     text = "My Courses",
@@ -133,6 +111,7 @@ private fun CoursesScreen(
                         .fillMaxWidth()
                         .padding(horizontal = dimensionResource(R.dimen.padding_medium))
                 )
+
                 Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
             }
 
@@ -143,12 +122,12 @@ private fun CoursesScreen(
                             .fillMaxWidth()
                             .padding(horizontal = dimensionResource(R.dimen.padding_medium))
                     ) {
+
                         OutlinedTextField(
                             value = courseName,
                             onValueChange = onCourseNameChange,
                             label = { Text("Course Name") },
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = courseName.isBlank() && courseName.isNotEmpty()
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
@@ -157,8 +136,7 @@ private fun CoursesScreen(
                             value = professor,
                             onValueChange = onProfessorChange,
                             label = { Text("Professor") },
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = professor.isBlank() && professor.isNotEmpty()
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
@@ -167,27 +145,15 @@ private fun CoursesScreen(
                             value = credits,
                             onValueChange = onCreditsChange,
                             label = { Text("Credits") },
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = credits.isBlank() && credits.isNotEmpty()
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
 
-                        if (courseName.isNotBlank() && professor.isNotBlank() && credits.isBlank()) {
-                            Text(
-                                text = "Please enter credits!",
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-
                         Button(
                             onClick = onSaveCourse,
                             enabled = isCourseFormValid(courseName, professor, credits),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Save Course")
                         }
@@ -205,18 +171,11 @@ private fun CoursesScreen(
                             .padding(dimensionResource(R.dimen.padding_large)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = if (searchQuery.isBlank()) "No courses yet! Tap + to add your first course."
-                            else "No courses found for \"$searchQuery\"",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                        Text("No courses found")
                     }
                 }
             } else {
-                items(
-                    items = courses,
-                    key = { course -> course.id }
-                ) { course ->
+                items(courses) { course ->
                     CourseItem(
                         course = course,
                         onCourseClick = { onCourseClick(course.id, course.name) },
