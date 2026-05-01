@@ -1,76 +1,66 @@
 package com.example.coursecompanionapp.presentation.viewmodel.courses
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.coursecompanionapp.model.Course
-import com.example.coursecompanionapp.model.HardcodedData
+import com.example.coursecompanionapp.model.repository.CoursesRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class CoursesViewModel : ViewModel() {
+@HiltViewModel
+class CoursesViewModel @Inject constructor(
+    private val repository: CoursesRepository
+) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(CoursesUiState())
-    val uiState: StateFlow<CoursesUiState> = _uiState
+    private val _uiState = MutableStateFlow<CoursesUiState>(CoursesUiState.Init)
+    val uiState: StateFlow<CoursesUiState> = _uiState.asStateFlow()
+
+    private val _navigationEvent = Channel<CoursesNavigationEvent>(Channel.BUFFERED)
+    val navigationEvent = _navigationEvent.receiveAsFlow()
+
+    private val _courses = MutableStateFlow<List<Course>>(emptyList())
+    val courses: StateFlow<List<Course>> = _courses.asStateFlow()
 
     init {
         loadCourses()
     }
 
     private fun loadCourses() {
-        _uiState.update {
-            it.copy(courses = HardcodedData.courses)
-        }
-    }
-
-    fun onSearchQueryChange(query: String) {
-        _uiState.update {
-            it.copy(searchQuery = query)
-        }
-    }
-
-    fun onToggleForm() {
-        _uiState.update {
-            it.copy(showForm = !it.showForm)
-        }
-    }
-
-    fun onCourseNameChange(value: String) {
-        _uiState.update { it.copy(courseName = value) }
-    }
-
-    fun onProfessorChange(value: String) {
-        _uiState.update { it.copy(professor = value) }
-    }
-
-    fun onCreditsChange(value: String) {
-        if (value.all { it.isDigit() }) {
-            _uiState.update { it.copy(credits = value) }
-        }
-    }
-
-    fun onSaveCourse() {
-        val state = _uiState.value
-
-        if (state.courseName.isNotBlank()
-            && state.professor.isNotBlank()
-            && state.credits.isNotBlank()
-        ) {
-            val newCourse = Course(
-                id = state.courses.size + 1,
-                name = state.courseName,
-                professor = state.professor,
-                credits = state.credits.toInt()
-            )
-
-            _uiState.update {
-                it.copy(
-                    courses = it.courses + newCourse,
-                    courseName = "",
-                    professor = "",
-                    credits = "",
-                    showForm = false
-                )
+        viewModelScope.launch {
+            _uiState.value = CoursesUiState.Loading
+            try {
+                _courses.value = repository.getCourses()
+                _uiState.value = CoursesUiState.Success(_courses.value)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = CoursesUiState.Error(e.message ?: "Failed to load courses.")
             }
         }
+    }
+
+    fun addCourse(course: Course) {
+        viewModelScope.launch {
+            _uiState.value = CoursesUiState.Loading
+            try {
+                _courses.value = repository.addCourse(course, _courses.value)
+                _uiState.value = CoursesUiState.Success(_courses.value)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = CoursesUiState.Error(e.message ?: "Failed to add course.")
+            }
+        }
+    }
+
+    fun resetUiState() {
+        loadCourses()
     }
 }

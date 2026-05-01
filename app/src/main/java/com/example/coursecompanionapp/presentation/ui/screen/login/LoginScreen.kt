@@ -17,59 +17,86 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.coursecompanionapp.R
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.screen.login.component.LoginButton
+import com.example.coursecompanionapp.presentation.viewmodel.login.LoginNavigationEvent
+import com.example.coursecompanionapp.presentation.viewmodel.login.LoginUiState
+import com.example.coursecompanionapp.presentation.viewmodel.login.LoginViewModel
 
 private fun isEmailValid(email: String) = email.contains("stu.ibu.edu.ba") && email.isNotBlank()
 private fun isPasswordValid(password: String) = password.length >= 8
 
+// STATEFUL
 @Composable
 fun LoginScreen(
-    onLoginClick: () -> Unit = {},
+    viewModel: LoginViewModel,
+    onNavigate: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var emailError by remember { mutableStateOf(false) }
-    var passwordError by remember { mutableStateOf(false) }
 
-    LoginScreen(
-        email = email,
-        password = password,
-        emailError = emailError,
-        passwordError = passwordError,
-        onEmailChange = {
-            email = it
-            emailError = false
-        },
-        onPasswordChange = {
-            password = it
-            passwordError = false
-        },
-        onLoginClick = {
-            emailError = !isEmailValid(email)
-            passwordError = !isPasswordValid(password)
-            if (isEmailValid(email) && isPasswordValid(password)) {
-                onLoginClick()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect { event ->
+            when (event) {
+                LoginNavigationEvent.Navigate -> onNavigate()
+                LoginNavigationEvent.NavigateBack -> {}
             }
-        },
-        isLoginEnabled = isEmailValid(email) && isPasswordValid(password),
-        modifier = modifier
-    )
+        }
+    }
+
+    when (uiState) {
+        is LoginUiState.Loading -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        is LoginUiState.Error -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = (uiState as LoginUiState.Error).message,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Button(onClick = { viewModel.resetUiState() }) {
+                        Text("Try Again")
+                    }
+                }
+            }
+        }
+        else -> {
+            LoginScreen(
+                email = email,
+                password = password,
+                onEmailChange = { email = it },
+                onPasswordChange = { password = it },
+                isLoginEnabled = isEmailValid(email) && isPasswordValid(password),
+                onLoginClick = { viewModel.onLoginClick(email, password) },
+                modifier = modifier
+            )
+        }
+    }
 }
 
-
+// STATELESS
 @Composable
 private fun LoginScreen(
     email: String,
     password: String,
-    emailError: Boolean,
-    passwordError: Boolean,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onLoginClick: () -> Unit,
     isLoginEnabled: Boolean,
+    onLoginClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -146,13 +173,6 @@ private fun LoginScreen(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
-                        isError = emailError,
-                        supportingText = {
-                            if (emailError) Text(
-                                "Please enter a valid IBU email!",
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(dimensionResource(R.dimen.card_radius))
                     )
@@ -171,13 +191,6 @@ private fun LoginScreen(
                             )
                         },
                         visualTransformation = PasswordVisualTransformation(),
-                        isError = passwordError,
-                        supportingText = {
-                            if (passwordError) Text(
-                                "Password must be at least 8 characters!",
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(dimensionResource(R.dimen.card_radius))
                     )
@@ -207,6 +220,13 @@ private fun LoginScreen(
 @Composable
 fun LoginScreenPreview() {
     CourseCompanionAppTheme {
-        LoginScreen()
+        LoginScreen(
+            email = "",
+            password = "",
+            onEmailChange = {},
+            onPasswordChange = {},
+            isLoginEnabled = false,
+            onLoginClick = {}
+        )
     }
 }

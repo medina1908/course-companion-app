@@ -11,35 +11,80 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.coursecompanionapp.R
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.screen.profile.component.AccountInfo
 import com.example.coursecompanionapp.presentation.ui.screen.profile.component.NotificationSettings
 import com.example.coursecompanionapp.presentation.ui.screen.profile.component.ProfileHeader
+import com.example.coursecompanionapp.presentation.viewmodel.profile.ProfileUiState
+import com.example.coursecompanionapp.presentation.viewmodel.profile.ProfileViewModel
 
-
+// STATEFUL
 @Composable
 fun ProfileScreen(
+    viewModel: ProfileViewModel,
     modifier: Modifier = Modifier
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
     var notificationsEnabled by remember { mutableStateOf(true) }
     var emailUpdates by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
 
-    ProfileScreen(
-        notificationsEnabled = notificationsEnabled,
-        emailUpdates = emailUpdates,
-        showLogoutDialog = showLogoutDialog,
-        onNotificationsChange = { notificationsEnabled = it },
-        onEmailUpdatesChange = { emailUpdates = it },
-        onShowLogoutDialog = { showLogoutDialog = true },
-        onDismissLogoutDialog = { showLogoutDialog = false },
-        modifier = modifier
-    )
+    when (uiState) {
+        is ProfileUiState.Loading -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        is ProfileUiState.Error -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                    Text(
+                        text = (uiState as ProfileUiState.Error).message,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Button(onClick = { viewModel.resetUiState() }) {
+                        Text("Try Again")
+                    }
+                }
+            }
+        }
+        is ProfileUiState.Success -> {
+            val successState = uiState as ProfileUiState.Success
+            ProfileScreen(
+                name = successState.name,
+                email = successState.email,
+                university = successState.university,
+                department = successState.department,
+                notificationsEnabled = notificationsEnabled,
+                emailUpdates = emailUpdates,
+                showLogoutDialog = showLogoutDialog,
+                onNotificationsChange = { notificationsEnabled = it },
+                onEmailUpdatesChange = { emailUpdates = it },
+                onShowLogoutDialog = { showLogoutDialog = true },
+                onDismissLogoutDialog = { showLogoutDialog = false },
+                modifier = modifier
+            )
+        }
+        else -> {}
+    }
 }
 
+// STATELESS
 @Composable
 private fun ProfileScreen(
+    name: String,
+    email: String,
+    university: String,
+    department: String,
     notificationsEnabled: Boolean,
     emailUpdates: Boolean,
     showLogoutDialog: Boolean,
@@ -76,8 +121,8 @@ private fun ProfileScreen(
             .verticalScroll(rememberScrollState())
     ) {
         ProfileHeader(
-            name = "Medina Alić",
-            university = "International Burch University"
+            name = name,
+            university = university
         )
 
         Column(modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium))) {
@@ -108,8 +153,8 @@ private fun ProfileScreen(
             )
 
             AccountInfo(
-                email = "medina@stu.ibu.edu.ba",
-                department = "Software Engineering"
+                email = email,
+                department = department
             )
 
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_large)))
@@ -137,6 +182,18 @@ private fun ProfileScreen(
 @Composable
 fun ProfileScreenPreview() {
     CourseCompanionAppTheme {
-        ProfileScreen()
+        ProfileScreen(
+            name = "Medina Alić",
+            email = "medina@stu.ibu.edu.ba",
+            university = "International Burch University",
+            department = "Software Engineering",
+            notificationsEnabled = true,
+            emailUpdates = false,
+            showLogoutDialog = false,
+            onNotificationsChange = {},
+            onEmailUpdatesChange = {},
+            onShowLogoutDialog = {},
+            onDismissLogoutDialog = {}
+        )
     }
 }

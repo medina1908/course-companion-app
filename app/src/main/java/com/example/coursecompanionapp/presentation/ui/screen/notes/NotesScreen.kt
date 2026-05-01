@@ -13,23 +13,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.coursecompanionapp.R
 import com.example.coursecompanionapp.model.HardcodedData
 import com.example.coursecompanionapp.model.Note
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.screen.notes.component.NoteItem
+import com.example.coursecompanionapp.presentation.viewmodel.notes.NotesUiState
+import com.example.coursecompanionapp.presentation.viewmodel.notes.NotesViewModel
 
 private fun isNoteFormValid(title: String, content: String) =
     title.isNotBlank() && content.isNotBlank()
 
+// STATEFUL
 @Composable
 fun NotesScreen(
+    viewModel: NotesViewModel,
     onNoteClick: (String, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
-    val notes = remember {
-        mutableStateListOf(*HardcodedData.notes.toTypedArray())
-    }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val notes by viewModel.notes.collectAsStateWithLifecycle()
 
     var showForm by remember { mutableStateOf(false) }
     var noteTitle by remember { mutableStateOf("") }
@@ -41,36 +45,64 @@ fun NotesScreen(
                 it.content.contains(searchQuery, ignoreCase = true)
     }
 
-    NotesScreen(
-        notes = filteredNotes,
-        totalNotes = notes.size,
-        showForm = showForm,
-        noteTitle = noteTitle,
-        noteContent = noteContent,
-        searchQuery = searchQuery,
-        onNoteClick = onNoteClick,
-        onShowFormToggle = { showForm = !showForm },
-        onNoteTitleChange = { noteTitle = it },
-        onNoteContentChange = { noteContent = it },
-        onSearchQueryChange = { searchQuery = it },
-        onSaveNote = {
-            if (isNoteFormValid(noteTitle, noteContent)) {
-                notes.add(
-                    Note(
-                        id = notes.size + 1,
-                        title = noteTitle,
-                        content = noteContent,
-                        courseId = 1,
-                        date = "04.04.2026"
-                    )
-                )
-                noteTitle = ""
-                noteContent = ""
-                showForm = false
+    when (uiState) {
+        is NotesUiState.Loading -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
-        },
-        modifier = modifier
-    )
+        }
+        is NotesUiState.Error -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = (uiState as NotesUiState.Error).message,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Button(onClick = { viewModel.resetUiState() }) {
+                        Text("Try Again")
+                    }
+                }
+            }
+        }
+        else -> {
+            NotesScreen(
+                notes = filteredNotes,
+                totalNotes = notes.size,
+                showForm = showForm,
+                noteTitle = noteTitle,
+                noteContent = noteContent,
+                searchQuery = searchQuery,
+                onNoteClick = onNoteClick,
+                onShowFormToggle = { showForm = !showForm },
+                onNoteTitleChange = { noteTitle = it },
+                onNoteContentChange = { noteContent = it },
+                onSearchQueryChange = { searchQuery = it },
+                onSaveNote = {
+                    if (isNoteFormValid(noteTitle, noteContent)) {
+                        viewModel.addNote(
+                            Note(
+                                id = notes.size + 1,
+                                title = noteTitle,
+                                content = noteContent,
+                                courseId = 1,
+                                date = "04.04.2026"
+                            )
+                        )
+                        noteTitle = ""
+                        noteContent = ""
+                        showForm = false
+                    }
+                },
+                modifier = modifier
+            )
+        }
+    }
 }
 
 // STATELESS
@@ -267,6 +299,19 @@ private fun NotesScreen(
 @Composable
 fun NotesScreenPreview() {
     CourseCompanionAppTheme {
-        NotesScreen()
+        NotesScreen(
+            notes = HardcodedData.notes,
+            totalNotes = HardcodedData.notes.size,
+            showForm = false,
+            noteTitle = "",
+            noteContent = "",
+            searchQuery = "",
+            onNoteClick = { _, _ -> },
+            onShowFormToggle = {},
+            onNoteTitleChange = {},
+            onNoteContentChange = {},
+            onSearchQueryChange = {},
+            onSaveNote = {}
+        )
     }
 }

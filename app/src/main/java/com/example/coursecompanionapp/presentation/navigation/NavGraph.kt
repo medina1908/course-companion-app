@@ -2,6 +2,7 @@ package com.example.coursecompanionapp.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -15,6 +16,12 @@ import com.example.coursecompanionapp.presentation.ui.screen.notes.NoteDetailScr
 import com.example.coursecompanionapp.presentation.ui.screen.notes.NotesScreen
 import com.example.coursecompanionapp.presentation.ui.screen.profile.ProfileScreen
 import com.example.coursecompanionapp.presentation.ui.screen.tasks.TasksScreen
+import com.example.coursecompanionapp.presentation.viewmodel.courses.CoursesViewModel
+import com.example.coursecompanionapp.presentation.viewmodel.dashboard.DashboardViewModel
+import com.example.coursecompanionapp.presentation.viewmodel.login.LoginViewModel
+import com.example.coursecompanionapp.presentation.viewmodel.notes.NotesViewModel
+import com.example.coursecompanionapp.presentation.viewmodel.profile.ProfileViewModel
+import com.example.coursecompanionapp.presentation.viewmodel.tasks.TasksViewModel
 
 @Composable
 fun NavGraph(
@@ -27,8 +34,10 @@ fun NavGraph(
         modifier = modifier
     ) {
         composable(route = Screen.Login.route) {
+            val viewModel: LoginViewModel = hiltViewModel()
             LoginScreen(
-                onLoginClick = {
+                viewModel = viewModel,
+                onNavigate = {
                     navController.navigate(Screen.Dashboard.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
@@ -36,27 +45,34 @@ fun NavGraph(
             )
         }
         composable(route = Screen.Dashboard.route) {
-            DashboardScreen()
+            val viewModel: DashboardViewModel = hiltViewModel()
+            DashboardScreen(viewModel = viewModel)
         }
         composable(route = Screen.Courses.route) {
+            val viewModel: CoursesViewModel = hiltViewModel()
             CoursesScreen(
+                viewModel = viewModel,
                 onCourseClick = { courseId, courseName ->
                     navController.navigate(Screen.CourseDetail.createRoute(courseId, courseName))
                 }
             )
         }
         composable(route = Screen.Notes.route) {
+            val viewModel: NotesViewModel = hiltViewModel()
             NotesScreen(
+                viewModel = viewModel,
                 onNoteClick = { noteTitle, noteContent ->
                     navController.navigate(Screen.NoteDetail.createRoute(noteTitle, noteContent))
                 }
             )
         }
         composable(route = Screen.Tasks.route) {
-            TasksScreen()
+            val viewModel: TasksViewModel = hiltViewModel()
+            TasksScreen(viewModel = viewModel)
         }
         composable(route = Screen.Profile.route) {
-            ProfileScreen()
+            val viewModel: ProfileViewModel = hiltViewModel()
+            ProfileScreen(viewModel = viewModel)
         }
         composable(
             route = Screen.CourseDetail.route,

@@ -13,23 +13,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.coursecompanionapp.R
 import com.example.coursecompanionapp.model.HardcodedData
 import com.example.coursecompanionapp.model.Task
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.screen.tasks.component.TaskItem
+import com.example.coursecompanionapp.presentation.viewmodel.tasks.TasksUiState
+import com.example.coursecompanionapp.presentation.viewmodel.tasks.TasksViewModel
 
 private fun isTaskFormValid(title: String, dueDate: String) =
     title.isNotBlank() && dueDate.isNotBlank()
 
-
+// STATEFUL
 @Composable
 fun TasksScreen(
+    viewModel: TasksViewModel,
     modifier: Modifier = Modifier
 ) {
-    val tasks = remember {
-        mutableStateListOf(*HardcodedData.tasks.toTypedArray())
-    }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val tasks by viewModel.tasks.collectAsStateWithLifecycle()
 
     var showForm by remember { mutableStateOf(false) }
     var taskTitle by remember { mutableStateOf("") }
@@ -40,43 +43,67 @@ fun TasksScreen(
     val completionRate = if (tasks.isEmpty()) 0f
     else completedCount.toFloat() / tasks.size.toFloat()
 
-    TasksScreen(
-        tasks = tasks,
-        showForm = showForm,
-        taskTitle = taskTitle,
-        taskDueDate = taskDueDate,
-        completedCount = completedCount,
-        pendingCount = pendingCount,
-        completionRate = completionRate,
-        onShowFormToggle = { showForm = !showForm },
-        onTaskTitleChange = { taskTitle = it },
-        onTaskDueDateChange = { taskDueDate = it },
-        onSaveTask = {
-            if (isTaskFormValid(taskTitle, taskDueDate)) {
-                tasks.add(
-                    Task(
-                        id = tasks.size + 1,
-                        title = taskTitle,
-                        courseId = 1,
-                        dueDate = taskDueDate,
-                        isCompleted = false
+    when (uiState) {
+        is TasksUiState.Loading -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        is TasksUiState.Error -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = (uiState as TasksUiState.Error).message,
+                        color = MaterialTheme.colorScheme.error
                     )
-                )
-                taskTitle = ""
-                taskDueDate = ""
-                showForm = false
+                    Button(onClick = { viewModel.resetUiState() }) {
+                        Text("Try Again")
+                    }
+                }
             }
-        },
-        onToggleTask = { id ->
-            val index = tasks.indexOfFirst { it.id == id }
-            if (index != -1) {
-                tasks[index] = tasks[index].copy(isCompleted = !tasks[index].isCompleted)
-            }
-        },
-        modifier = modifier
-    )
+        }
+        else -> {
+            TasksScreen(
+                tasks = tasks,
+                showForm = showForm,
+                taskTitle = taskTitle,
+                taskDueDate = taskDueDate,
+                completedCount = completedCount,
+                pendingCount = pendingCount,
+                completionRate = completionRate,
+                onShowFormToggle = { showForm = !showForm },
+                onTaskTitleChange = { taskTitle = it },
+                onTaskDueDateChange = { taskDueDate = it },
+                onSaveTask = {
+                    if (isTaskFormValid(taskTitle, taskDueDate)) {
+                        viewModel.addTask(
+                            Task(
+                                id = tasks.size + 1,
+                                title = taskTitle,
+                                courseId = 1,
+                                dueDate = taskDueDate,
+                                isCompleted = false
+                            )
+                        )
+                        taskTitle = ""
+                        taskDueDate = ""
+                        showForm = false
+                    }
+                },
+                onToggleTask = { viewModel.toggleTask(it) },
+                modifier = modifier
+            )
+        }
+    }
 }
 
+// STATELESS
 @Composable
 private fun TasksScreen(
     tasks: List<Task>,
@@ -283,6 +310,19 @@ fun StatBox(
 @Composable
 fun TasksScreenPreview() {
     CourseCompanionAppTheme {
-        TasksScreen()
+        TasksScreen(
+            tasks = HardcodedData.tasks,
+            showForm = false,
+            taskTitle = "",
+            taskDueDate = "",
+            completedCount = 1,
+            pendingCount = 2,
+            completionRate = 0.33f,
+            onShowFormToggle = {},
+            onTaskTitleChange = {},
+            onTaskDueDateChange = {},
+            onSaveTask = {},
+            onToggleTask = {}
+        )
     }
 }

@@ -12,11 +12,13 @@ import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.coursecompanionapp.R
 import com.example.coursecompanionapp.model.Course
 import com.example.coursecompanionapp.model.HardcodedData
@@ -24,29 +26,54 @@ import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.component.UserSectionCard
 import com.example.coursecompanionapp.presentation.ui.screen.home.component.DashboardHeader
 import com.example.coursecompanionapp.presentation.ui.screen.home.component.StatItem
+import com.example.coursecompanionapp.presentation.viewmodel.dashboard.DashboardUiState
+import com.example.coursecompanionapp.presentation.viewmodel.dashboard.DashboardViewModel
 
+// STATEFUL
 @Composable
 fun DashboardScreen(
+    viewModel: DashboardViewModel,
     modifier: Modifier = Modifier
 ) {
-    val tasks = listOf(
-        "Study Kotlin",
-        "Complete Assignment",
-        "Read Docs"
-    )
-    val achievements = listOf(
-        "First Course Added",
-        "3 Day Streak"
-    )
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    DashboardScreen(
-        tasks = tasks,
-        achievements = achievements,
-        courses = HardcodedData.courses,
-        modifier = modifier
-    )
+    when (uiState) {
+        is DashboardUiState.Loading -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        is DashboardUiState.Error -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = (uiState as DashboardUiState.Error).message,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Button(onClick = { viewModel.resetUiState() }) {
+                        Text("Try Again")
+                    }
+                }
+            }
+        }
+        else -> {
+            DashboardScreen(
+                tasks = listOf("Study Kotlin", "Complete Assignment", "Read Docs"),
+                achievements = listOf("First Course Added", "3 Day Streak"),
+                courses = HardcodedData.courses,
+                modifier = modifier
+            )
+        }
+    }
 }
 
+// STATELESS
 @Composable
 private fun DashboardScreen(
     tasks: List<String>,
@@ -72,10 +99,7 @@ private fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_large)))
 
-            Text(
-                text = "Today's Focus",
-                style = MaterialTheme.typography.titleMedium
-            )
+            Text(text = "Today's Focus", style = MaterialTheme.typography.titleMedium)
 
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
 
@@ -96,10 +120,7 @@ private fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_large)))
 
-            Text(
-                text = "Achievements",
-                style = MaterialTheme.typography.titleMedium
-            )
+            Text(text = "Achievements", style = MaterialTheme.typography.titleMedium)
 
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
 
@@ -125,10 +146,7 @@ private fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_large)))
 
-            Text(
-                text = "My Courses",
-                style = MaterialTheme.typography.titleMedium
-            )
+            Text(text = "My Courses", style = MaterialTheme.typography.titleMedium)
 
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
 
@@ -164,10 +182,7 @@ private fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_large)))
 
-            Text(
-                text = "Your Stats",
-                style = MaterialTheme.typography.titleMedium
-            )
+            Text(text = "Your Stats", style = MaterialTheme.typography.titleMedium)
 
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
 
@@ -184,6 +199,10 @@ private fun DashboardScreen(
 @Composable
 fun DashboardScreenPreview() {
     CourseCompanionAppTheme {
-        DashboardScreen()
+        DashboardScreen(
+            tasks = listOf("Study Kotlin", "Complete Assignment", "Read Docs"),
+            achievements = listOf("First Course Added", "3 Day Streak"),
+            courses = HardcodedData.courses
+        )
     }
 }

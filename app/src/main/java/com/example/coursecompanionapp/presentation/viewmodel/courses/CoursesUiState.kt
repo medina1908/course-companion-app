@@ -2,11 +2,9 @@ package com.example.coursecompanionapp.presentation.viewmodel.courses
 
 import com.example.coursecompanionapp.model.Course
 
-data class CoursesUiState(
-    val courses: List<Course> = emptyList(),
-    val showForm: Boolean = false,
-    val courseName: String = "",
-    val professor: String = "",
-    val credits: String = "",
-    val searchQuery: String = ""
-)
+sealed interface CoursesUiState {
+    data object Init : CoursesUiState
+    data object Loading : CoursesUiState
+    data class Success(val courses: List<Course>) : CoursesUiState
+    data class Error(val message: String) : CoursesUiState
+}
