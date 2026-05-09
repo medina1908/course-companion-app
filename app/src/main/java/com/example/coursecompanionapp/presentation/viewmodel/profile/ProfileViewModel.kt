@@ -2,7 +2,7 @@ package com.example.coursecompanionapp.presentation.viewmodel.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.coursecompanionapp.model.repository.ProfileRepository
+import com.example.coursecompanionapp.model.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
@@ -15,7 +15,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val repository: ProfileRepository
+    private val repository: UserRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Init)
@@ -32,12 +32,11 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = ProfileUiState.Loading
             try {
-                val data = repository.getProfile()
                 _uiState.value = ProfileUiState.Success(
-                    name = data.name,
-                    email = data.email,
-                    university = data.university,
-                    department = data.department
+                    name = "Student",
+                    email = "student@stu.ibu.edu.ba",
+                    university = "International Burch University",
+                    department = "Software Engineering"
                 )
             } catch (e: CancellationException) {
                 throw e

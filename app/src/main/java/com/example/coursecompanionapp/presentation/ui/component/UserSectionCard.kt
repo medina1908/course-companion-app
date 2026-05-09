@@ -13,11 +13,12 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun UserSectionCard(
+    name: String = "Student",
+    university: String = "International Burch University",
     totalCourses: Int,
     totalTasks: Int,
     totalNotes: Int
 ) {
-
     Card(
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
@@ -35,29 +36,23 @@ fun UserSectionCard(
                 )
                 .padding(20.dp)
         ) {
-
             Column {
-
                 Text(
-                    text = "Medina Alić",
+                    text = name,
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onPrimary,
                     fontWeight = FontWeight.Bold
                 )
-
                 Text(
-                    text = "International Burch University",
+                    text = university,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                 )
-
                 Spacer(modifier = Modifier.height(20.dp))
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-
                     StatItem("Courses", totalCourses.toString())
                     StatItem("Tasks", totalTasks.toString())
                     StatItem("Notes", totalNotes.toString())
@@ -69,16 +64,13 @@ fun UserSectionCard(
 
 @Composable
 fun StatItem(title: String, value: String) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = value,
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onPrimary,
             fontWeight = FontWeight.Bold
         )
-
         Text(
             text = title,
             style = MaterialTheme.typography.bodySmall,

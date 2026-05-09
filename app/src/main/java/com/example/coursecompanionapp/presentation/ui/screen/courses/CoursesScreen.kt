@@ -14,8 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.coursecompanionapp.R
-import com.example.coursecompanionapp.model.Course
-import com.example.coursecompanionapp.model.HardcodedData
+import com.example.coursecompanionapp.model.data.local.entity.CourseEntity
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.screen.courses.component.CourseItem
 import com.example.coursecompanionapp.presentation.viewmodel.courses.CoursesUiState
@@ -39,6 +38,7 @@ fun CoursesScreen(
     var professor by remember { mutableStateOf("") }
     var credits by remember { mutableStateOf("") }
     var searchQuery by remember { mutableStateOf("") }
+    var editingCourse by remember { mutableStateOf<CourseEntity?>(null) }
 
     val filteredCourses = courses.filter {
         it.name.contains(searchQuery, ignoreCase = true) ||
@@ -78,27 +78,54 @@ fun CoursesScreen(
                 professor = professor,
                 credits = credits,
                 searchQuery = searchQuery,
+                isEditing = editingCourse != null,
                 onCourseClick = onCourseClick,
-                onShowFormToggle = { showForm = !showForm },
+                onShowFormToggle = {
+                    showForm = !showForm
+                    if (!showForm) {
+                        editingCourse = null
+                        courseName = ""
+                        professor = ""
+                        credits = ""
+                    }
+                },
                 onCourseNameChange = { courseName = it },
                 onProfessorChange = { professor = it },
                 onCreditsChange = { if (it.all { c -> c.isDigit() }) credits = it },
                 onSearchQueryChange = { searchQuery = it },
                 onSaveCourse = {
                     if (isCourseFormValid(courseName, professor, credits)) {
-                        viewModel.addCourse(
-                            Course(
-                                id = courses.size + 1,
-                                name = courseName,
-                                professor = professor,
-                                credits = credits.toInt()
+                        if (editingCourse != null) {
+                            viewModel.updateCourse(
+                                editingCourse!!.copy(
+                                    name = courseName,
+                                    professor = professor,
+                                    credits = credits.toInt()
+                                )
                             )
-                        )
+                            editingCourse = null
+                        } else {
+                            viewModel.addCourse(
+                                CourseEntity(
+                                    name = courseName,
+                                    professor = professor,
+                                    credits = credits.toInt()
+                                )
+                            )
+                        }
                         courseName = ""
                         professor = ""
                         credits = ""
                         showForm = false
                     }
+                },
+                onDeleteCourse = { viewModel.deleteCourse(it) },
+                onEditCourse = { course ->
+                    editingCourse = course
+                    courseName = course.name
+                    professor = course.professor
+                    credits = course.credits.toString()
+                    showForm = true
                 },
                 modifier = modifier
             )
@@ -109,12 +136,13 @@ fun CoursesScreen(
 // STATELESS
 @Composable
 private fun CoursesScreen(
-    courses: List<Course>,
+    courses: List<CourseEntity>,
     showForm: Boolean,
     courseName: String,
     professor: String,
     credits: String,
     searchQuery: String,
+    isEditing: Boolean,
     onCourseClick: (Int, String) -> Unit,
     onShowFormToggle: () -> Unit,
     onCourseNameChange: (String) -> Unit,
@@ -122,6 +150,8 @@ private fun CoursesScreen(
     onCreditsChange: (String) -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onSaveCourse: () -> Unit,
+    onDeleteCourse: (CourseEntity) -> Unit,
+    onEditCourse: (CourseEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -175,12 +205,19 @@ private fun CoursesScreen(
                             .fillMaxWidth()
                             .padding(horizontal = dimensionResource(R.dimen.padding_medium))
                     ) {
+                        Text(
+                            text = if (isEditing) "Edit Course" else "Add Course",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+
                         OutlinedTextField(
                             value = courseName,
                             onValueChange = onCourseNameChange,
                             label = { Text("Course Name") },
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = courseName.isBlank() && courseName.isNotEmpty()
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
@@ -189,8 +226,7 @@ private fun CoursesScreen(
                             value = professor,
                             onValueChange = onProfessorChange,
                             label = { Text("Professor") },
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = professor.isBlank() && professor.isNotEmpty()
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
@@ -199,19 +235,10 @@ private fun CoursesScreen(
                             value = credits,
                             onValueChange = onCreditsChange,
                             label = { Text("Credits") },
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = credits.isBlank() && credits.isNotEmpty()
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-
-                        if (courseName.isNotBlank() && professor.isNotBlank() && credits.isBlank()) {
-                            Text(
-                                text = "Please enter credits!",
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
 
                         Button(
                             onClick = onSaveCourse,
@@ -221,7 +248,7 @@ private fun CoursesScreen(
                                 containerColor = MaterialTheme.colorScheme.primary
                             )
                         ) {
-                            Text("Save Course")
+                            Text(if (isEditing) "Update Course" else "Save Course")
                         }
 
                         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
@@ -252,6 +279,8 @@ private fun CoursesScreen(
                     CourseItem(
                         course = course,
                         onCourseClick = { onCourseClick(course.id, course.name) },
+                        onDelete = { onDeleteCourse(course) },
+                        onEdit = { onEditCourse(course) },
                         modifier = Modifier.padding(
                             horizontal = dimensionResource(R.dimen.padding_medium),
                             vertical = dimensionResource(R.dimen.padding_small)
@@ -268,19 +297,22 @@ private fun CoursesScreen(
 fun CoursesScreenPreview() {
     CourseCompanionAppTheme {
         CoursesScreen(
-            courses = HardcodedData.courses,
+            courses = emptyList(),
             showForm = false,
             courseName = "",
             professor = "",
             credits = "",
             searchQuery = "",
+            isEditing = false,
             onCourseClick = { _, _ -> },
             onShowFormToggle = {},
             onCourseNameChange = {},
             onProfessorChange = {},
             onCreditsChange = {},
             onSearchQueryChange = {},
-            onSaveCourse = {}
+            onSaveCourse = {},
+            onDeleteCourse = {},
+            onEditCourse = {}
         )
     }
 }

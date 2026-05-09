@@ -2,8 +2,8 @@ package com.example.coursecompanionapp.presentation.viewmodel.notes
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.coursecompanionapp.model.Note
-import com.example.coursecompanionapp.model.repository.NotesRepository
+import com.example.coursecompanionapp.model.data.local.entity.NoteEntity
+import com.example.coursecompanionapp.model.repository.NoteRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
@@ -16,7 +16,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class NotesViewModel @Inject constructor(
-    private val repository: NotesRepository
+    private val repository: NoteRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<NotesUiState>(NotesUiState.Init)
@@ -25,8 +25,8 @@ class NotesViewModel @Inject constructor(
     private val _navigationEvent = Channel<NotesNavigationEvent>(Channel.BUFFERED)
     val navigationEvent = _navigationEvent.receiveAsFlow()
 
-    private val _notes = MutableStateFlow<List<Note>>(emptyList())
-    val notes: StateFlow<List<Note>> = _notes.asStateFlow()
+    private val _notes = MutableStateFlow<List<NoteEntity>>(emptyList())
+    val notes: StateFlow<List<NoteEntity>> = _notes.asStateFlow()
 
     init {
         loadNotes()
@@ -36,8 +36,10 @@ class NotesViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = NotesUiState.Loading
             try {
-                _notes.value = repository.getNotes()
-                _uiState.value = NotesUiState.Success(_notes.value)
+                repository.getAllNotes().collect { notes ->
+                    _notes.value = notes
+                    _uiState.value = NotesUiState.Success(notes)
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -46,16 +48,37 @@ class NotesViewModel @Inject constructor(
         }
     }
 
-    fun addNote(note: Note) {
+    fun addNote(note: NoteEntity) {
         viewModelScope.launch {
-            _uiState.value = NotesUiState.Loading
             try {
-                _notes.value = repository.addNote(note, _notes.value)
-                _uiState.value = NotesUiState.Success(_notes.value)
+                repository.insertNote(note)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 _uiState.value = NotesUiState.Error(e.message ?: "Failed to add note.")
+            }
+        }
+    }
+    fun deleteNote(note: NoteEntity) {
+        viewModelScope.launch {
+            try {
+                repository.deleteNote(note)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = NotesUiState.Error(e.message ?: "Failed to delete note.")
+            }
+        }
+    }
+
+    fun updateNote(note: NoteEntity) {
+        viewModelScope.launch {
+            try {
+                repository.updateNote(note)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = NotesUiState.Error(e.message ?: "Failed to update note.")
             }
         }
     }

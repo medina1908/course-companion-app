@@ -15,12 +15,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.coursecompanionapp.R
-import com.example.coursecompanionapp.model.HardcodedData
-import com.example.coursecompanionapp.model.Note
+import com.example.coursecompanionapp.model.data.local.entity.NoteEntity
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.screen.notes.component.NoteItem
 import com.example.coursecompanionapp.presentation.viewmodel.notes.NotesUiState
 import com.example.coursecompanionapp.presentation.viewmodel.notes.NotesViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private fun isNoteFormValid(title: String, content: String) =
     title.isNotBlank() && content.isNotBlank()
@@ -39,6 +41,7 @@ fun NotesScreen(
     var noteTitle by remember { mutableStateOf("") }
     var noteContent by remember { mutableStateOf("") }
     var searchQuery by remember { mutableStateOf("") }
+    var editingNote by remember { mutableStateOf<NoteEntity?>(null) }
 
     val filteredNotes = notes.filter {
         it.title.contains(searchQuery, ignoreCase = true) ||
@@ -78,26 +81,51 @@ fun NotesScreen(
                 noteTitle = noteTitle,
                 noteContent = noteContent,
                 searchQuery = searchQuery,
+                isEditing = editingNote != null,
                 onNoteClick = onNoteClick,
-                onShowFormToggle = { showForm = !showForm },
+                onShowFormToggle = {
+                    showForm = !showForm
+                    if (!showForm) {
+                        editingNote = null
+                        noteTitle = ""
+                        noteContent = ""
+                    }
+                },
                 onNoteTitleChange = { noteTitle = it },
                 onNoteContentChange = { noteContent = it },
                 onSearchQueryChange = { searchQuery = it },
                 onSaveNote = {
                     if (isNoteFormValid(noteTitle, noteContent)) {
-                        viewModel.addNote(
-                            Note(
-                                id = notes.size + 1,
-                                title = noteTitle,
-                                content = noteContent,
-                                courseId = 1,
-                                date = "04.04.2026"
+                        val date = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date())
+                        if (editingNote != null) {
+                            viewModel.updateNote(
+                                editingNote!!.copy(
+                                    title = noteTitle,
+                                    content = noteContent
+                                )
                             )
-                        )
+                            editingNote = null
+                        } else {
+                            viewModel.addNote(
+                                NoteEntity(
+                                    title = noteTitle,
+                                    content = noteContent,
+                                    courseId = 1,
+                                    date = date
+                                )
+                            )
+                        }
                         noteTitle = ""
                         noteContent = ""
                         showForm = false
                     }
+                },
+                onDeleteNote = { viewModel.deleteNote(it) },
+                onEditNote = { note ->
+                    editingNote = note
+                    noteTitle = note.title
+                    noteContent = note.content
+                    showForm = true
                 },
                 modifier = modifier
             )
@@ -108,18 +136,21 @@ fun NotesScreen(
 // STATELESS
 @Composable
 private fun NotesScreen(
-    notes: List<Note>,
+    notes: List<NoteEntity>,
     totalNotes: Int,
     showForm: Boolean,
     noteTitle: String,
     noteContent: String,
     searchQuery: String,
+    isEditing: Boolean,
     onNoteClick: (String, String) -> Unit,
     onShowFormToggle: () -> Unit,
     onNoteTitleChange: (String) -> Unit,
     onNoteContentChange: (String) -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onSaveNote: () -> Unit,
+    onDeleteNote: (NoteEntity) -> Unit,
+    onEditNote: (NoteEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -184,7 +215,6 @@ private fun NotesScreen(
                 )
 
                 Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
-
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.padding_medium))
                 )
@@ -198,7 +228,7 @@ private fun NotesScreen(
                             .padding(dimensionResource(R.dimen.padding_medium))
                     ) {
                         Text(
-                            text = "New Note",
+                            text = if (isEditing) "Edit Note" else "New Note",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -224,14 +254,6 @@ private fun NotesScreen(
 
                         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
 
-                        if (noteTitle.isNotBlank() && noteContent.isBlank()) {
-                            Text(
-                                text = "Please enter note content!",
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-
                         Button(
                             onClick = onSaveNote,
                             enabled = isNoteFormValid(noteTitle, noteContent),
@@ -240,7 +262,7 @@ private fun NotesScreen(
                                 containerColor = MaterialTheme.colorScheme.primary
                             )
                         ) {
-                            Text("Save Note")
+                            Text(if (isEditing) "Update Note" else "Save Note")
                         }
 
                         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
@@ -284,6 +306,8 @@ private fun NotesScreen(
                         note = note,
                         index = index,
                         onNoteClick = { onNoteClick(note.title, note.content) },
+                        onDelete = { onDeleteNote(note) },
+                        onEdit = { onEditNote(note) },
                         modifier = Modifier.padding(
                             horizontal = dimensionResource(R.dimen.padding_medium),
                             vertical = dimensionResource(R.dimen.padding_small)
@@ -300,18 +324,21 @@ private fun NotesScreen(
 fun NotesScreenPreview() {
     CourseCompanionAppTheme {
         NotesScreen(
-            notes = HardcodedData.notes,
-            totalNotes = HardcodedData.notes.size,
+            notes = emptyList(),
+            totalNotes = 0,
             showForm = false,
             noteTitle = "",
             noteContent = "",
             searchQuery = "",
+            isEditing = false,
             onNoteClick = { _, _ -> },
             onShowFormToggle = {},
             onNoteTitleChange = {},
             onNoteContentChange = {},
             onSearchQueryChange = {},
-            onSaveNote = {}
+            onSaveNote = {},
+            onDeleteNote = {},
+            onEditNote = {}
         )
     }
 }
