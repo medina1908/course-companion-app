@@ -2,6 +2,7 @@ package com.example.coursecompanionapp.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -15,6 +16,12 @@ import com.example.coursecompanionapp.presentation.ui.screen.notes.NoteDetailScr
 import com.example.coursecompanionapp.presentation.ui.screen.notes.NotesScreen
 import com.example.coursecompanionapp.presentation.ui.screen.profile.ProfileScreen
 import com.example.coursecompanionapp.presentation.ui.screen.tasks.TasksScreen
+import com.example.coursecompanionapp.presentation.viewmodel.courses.CoursesViewModel
+import com.example.coursecompanionapp.presentation.viewmodel.dashboard.DashboardViewModel
+import com.example.coursecompanionapp.presentation.viewmodel.login.LoginViewModel
+import com.example.coursecompanionapp.presentation.viewmodel.notes.NotesViewModel
+import com.example.coursecompanionapp.presentation.viewmodel.profile.ProfileViewModel
+import com.example.coursecompanionapp.presentation.viewmodel.tasks.TasksViewModel
 
 @Composable
 fun NavGraph(
@@ -28,7 +35,8 @@ fun NavGraph(
     ) {
         composable(route = Screen.Login.route) {
             LoginScreen(
-                onLoginClick = {
+                viewModel = hiltViewModel(),
+                onNavigate = {
                     navController.navigate(Screen.Dashboard.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
@@ -36,10 +44,11 @@ fun NavGraph(
             )
         }
         composable(route = Screen.Dashboard.route) {
-            DashboardScreen()
+            DashboardScreen(viewModel = hiltViewModel())
         }
         composable(route = Screen.Courses.route) {
             CoursesScreen(
+                viewModel = hiltViewModel(),
                 onCourseClick = { courseId, courseName ->
                     navController.navigate(Screen.CourseDetail.createRoute(courseId, courseName))
                 }
@@ -47,16 +56,17 @@ fun NavGraph(
         }
         composable(route = Screen.Notes.route) {
             NotesScreen(
+                viewModel = hiltViewModel(),
                 onNoteClick = { noteTitle, noteContent ->
                     navController.navigate(Screen.NoteDetail.createRoute(noteTitle, noteContent))
                 }
             )
         }
         composable(route = Screen.Tasks.route) {
-            TasksScreen()
+            TasksScreen(viewModel = hiltViewModel())
         }
         composable(route = Screen.Profile.route) {
-            ProfileScreen()
+            ProfileScreen(viewModel = hiltViewModel())
         }
         composable(
             route = Screen.CourseDetail.route,

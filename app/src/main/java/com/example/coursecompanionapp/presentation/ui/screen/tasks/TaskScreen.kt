@@ -13,84 +13,125 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.coursecompanionapp.R
-import com.example.coursecompanionapp.model.HardcodedData
-import com.example.coursecompanionapp.model.Task
+import com.example.coursecompanionapp.model.data.local.entity.TaskEntity
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
+import com.example.coursecompanionapp.presentation.ui.screen.error.ErrorScreen
+import com.example.coursecompanionapp.presentation.ui.screen.loading.LoadingScreen
 import com.example.coursecompanionapp.presentation.ui.screen.tasks.component.TaskItem
+import com.example.coursecompanionapp.presentation.viewmodel.tasks.TasksUiState
+import com.example.coursecompanionapp.presentation.viewmodel.tasks.TasksViewModel
 
 private fun isTaskFormValid(title: String, dueDate: String) =
     title.isNotBlank() && dueDate.isNotBlank()
 
-
+// STATEFUL
 @Composable
 fun TasksScreen(
+    viewModel: TasksViewModel,
     modifier: Modifier = Modifier
 ) {
-    val tasks = remember {
-        mutableStateListOf(*HardcodedData.tasks.toTypedArray())
-    }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val tasks by viewModel.tasks.collectAsStateWithLifecycle()
 
     var showForm by remember { mutableStateOf(false) }
     var taskTitle by remember { mutableStateOf("") }
     var taskDueDate by remember { mutableStateOf("") }
+    var editingTask by remember { mutableStateOf<TaskEntity?>(null) }
 
     val completedCount = tasks.count { it.isCompleted }
     val pendingCount = tasks.count { !it.isCompleted }
     val completionRate = if (tasks.isEmpty()) 0f
     else completedCount.toFloat() / tasks.size.toFloat()
 
-    TasksScreen(
-        tasks = tasks,
-        showForm = showForm,
-        taskTitle = taskTitle,
-        taskDueDate = taskDueDate,
-        completedCount = completedCount,
-        pendingCount = pendingCount,
-        completionRate = completionRate,
-        onShowFormToggle = { showForm = !showForm },
-        onTaskTitleChange = { taskTitle = it },
-        onTaskDueDateChange = { taskDueDate = it },
-        onSaveTask = {
-            if (isTaskFormValid(taskTitle, taskDueDate)) {
-                tasks.add(
-                    Task(
-                        id = tasks.size + 1,
-                        title = taskTitle,
-                        courseId = 1,
-                        dueDate = taskDueDate,
-                        isCompleted = false
-                    )
-                )
-                taskTitle = ""
-                taskDueDate = ""
-                showForm = false
-            }
-        },
-        onToggleTask = { id ->
-            val index = tasks.indexOfFirst { it.id == id }
-            if (index != -1) {
-                tasks[index] = tasks[index].copy(isCompleted = !tasks[index].isCompleted)
-            }
-        },
-        modifier = modifier
-    )
+    when (uiState) {
+        is TasksUiState.Loading -> {
+            LoadingScreen()
+        }
+        is TasksUiState.Error -> {
+            ErrorScreen(
+                errorMessage = (uiState as TasksUiState.Error).message,
+                onErrorClick = { viewModel.resetUiState() }
+            )
+        }
+        else -> {
+            TasksScreen(
+                tasks = tasks,
+                showForm = showForm,
+                taskTitle = taskTitle,
+                taskDueDate = taskDueDate,
+                completedCount = completedCount,
+                pendingCount = pendingCount,
+                completionRate = completionRate,
+                isEditing = editingTask != null,
+                onShowFormToggle = {
+                    showForm = !showForm
+                    if (!showForm) {
+                        editingTask = null
+                        taskTitle = ""
+                        taskDueDate = ""
+                    }
+                },
+                onTaskTitleChange = { taskTitle = it },
+                onTaskDueDateChange = { taskDueDate = it },
+                onSaveTask = {
+                    if (isTaskFormValid(taskTitle, taskDueDate)) {
+                        if (editingTask != null) {
+                            viewModel.updateTask(
+                                editingTask!!.copy(
+                                    title = taskTitle,
+                                    dueDate = taskDueDate
+                                )
+                            )
+                            editingTask = null
+                        } else {
+                            viewModel.addTask(
+                                TaskEntity(
+                                    title = taskTitle,
+                                    courseId = 1,
+                                    dueDate = taskDueDate,
+                                    isCompleted = false
+                                )
+                            )
+                        }
+                        taskTitle = ""
+                        taskDueDate = ""
+                        showForm = false
+                    }
+                },
+                onToggleTask = { viewModel.toggleTask(it) },
+                onDeleteTask = { viewModel.deleteTask(it) },
+                onEditTask = { task ->
+                    editingTask = task
+                    taskTitle = task.title
+                    taskDueDate = task.dueDate
+                    showForm = true
+                },
+                modifier = modifier
+            )
+        }
+    }
 }
 
+// STATELESS
 @Composable
 private fun TasksScreen(
-    tasks: List<Task>,
+    tasks: List<TaskEntity>,
     showForm: Boolean,
     taskTitle: String,
     taskDueDate: String,
     completedCount: Int,
     pendingCount: Int,
     completionRate: Float,
+    isEditing: Boolean,
     onShowFormToggle: () -> Unit,
     onTaskTitleChange: (String) -> Unit,
     onTaskDueDateChange: (String) -> Unit,
     onSaveTask: () -> Unit,
     onToggleTask: (Int) -> Unit,
+    onDeleteTask: (TaskEntity) -> Unit,
+    onEditTask: (TaskEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -130,7 +171,7 @@ private fun TasksScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Hi Medina,",
+                            text = "My Tasks",
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -167,7 +208,7 @@ private fun TasksScreen(
                             .padding(dimensionResource(R.dimen.padding_medium))
                     ) {
                         Text(
-                            text = "Add New Task",
+                            text = if (isEditing) "Edit Task" else "Add New Task",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -189,14 +230,6 @@ private fun TasksScreen(
                         )
                         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
 
-                        if (taskTitle.isNotBlank() && taskDueDate.isBlank()) {
-                            Text(
-                                text = "Please enter due date!",
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-
                         Button(
                             onClick = onSaveTask,
                             enabled = isTaskFormValid(taskTitle, taskDueDate),
@@ -205,7 +238,7 @@ private fun TasksScreen(
                                 containerColor = MaterialTheme.colorScheme.primary
                             )
                         ) {
-                            Text("Save Task")
+                            Text(if (isEditing) "Update Task" else "Save Task")
                         }
 
                         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
@@ -244,6 +277,8 @@ private fun TasksScreen(
                     TaskItem(
                         task = task,
                         onToggle = onToggleTask,
+                        onDelete = { onDeleteTask(task) },
+                        onEdit = { onEditTask(task) },
                         modifier = Modifier.padding(
                             horizontal = dimensionResource(R.dimen.padding_medium),
                             vertical = dimensionResource(R.dimen.padding_small)
@@ -283,6 +318,22 @@ fun StatBox(
 @Composable
 fun TasksScreenPreview() {
     CourseCompanionAppTheme {
-        TasksScreen()
+        TasksScreen(
+            tasks = emptyList(),
+            showForm = false,
+            taskTitle = "",
+            taskDueDate = "",
+            completedCount = 0,
+            pendingCount = 0,
+            completionRate = 0f,
+            isEditing = false,
+            onShowFormToggle = {},
+            onTaskTitleChange = {},
+            onTaskDueDateChange = {},
+            onSaveTask = {},
+            onToggleTask = {},
+            onDeleteTask = {},
+            onEditTask = {}
+        )
     }
 }

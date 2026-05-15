@@ -18,7 +18,9 @@ import com.example.coursecompanionapp.presentation.navigation.NavGraph
 import com.example.coursecompanionapp.presentation.navigation.Screen
 import com.example.coursecompanionapp.presentation.navigation.bottomNavItems
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
