@@ -14,6 +14,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.coursecompanionapp.R
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
+import com.example.coursecompanionapp.presentation.ui.screen.error.ErrorScreen
+import com.example.coursecompanionapp.presentation.ui.screen.loading.LoadingScreen
 import com.example.coursecompanionapp.presentation.ui.screen.profile.component.AccountInfo
 import com.example.coursecompanionapp.presentation.ui.screen.profile.component.NotificationSettings
 import com.example.coursecompanionapp.presentation.ui.screen.profile.component.ProfileHeader
@@ -34,28 +36,13 @@ fun ProfileScreen(
 
     when (uiState) {
         is ProfileUiState.Loading -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = androidx.compose.ui.Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
+            LoadingScreen()
         }
         is ProfileUiState.Error -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = androidx.compose.ui.Alignment.Center
-            ) {
-                Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-                    Text(
-                        text = (uiState as ProfileUiState.Error).message,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    Button(onClick = { viewModel.resetUiState() }) {
-                        Text("Try Again")
-                    }
-                }
-            }
+            ErrorScreen(
+                errorMessage = (uiState as ProfileUiState.Error).message,
+                onErrorClick = { viewModel.resetUiState() }
+            )
         }
         is ProfileUiState.Success -> {
             val successState = uiState as ProfileUiState.Success

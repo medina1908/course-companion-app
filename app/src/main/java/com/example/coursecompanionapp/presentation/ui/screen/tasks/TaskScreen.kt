@@ -17,6 +17,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.coursecompanionapp.R
 import com.example.coursecompanionapp.model.data.local.entity.TaskEntity
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
+import com.example.coursecompanionapp.presentation.ui.screen.error.ErrorScreen
+import com.example.coursecompanionapp.presentation.ui.screen.loading.LoadingScreen
 import com.example.coursecompanionapp.presentation.ui.screen.tasks.component.TaskItem
 import com.example.coursecompanionapp.presentation.viewmodel.tasks.TasksUiState
 import com.example.coursecompanionapp.presentation.viewmodel.tasks.TasksViewModel
@@ -45,28 +47,13 @@ fun TasksScreen(
 
     when (uiState) {
         is TasksUiState.Loading -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
+            LoadingScreen()
         }
         is TasksUiState.Error -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = (uiState as TasksUiState.Error).message,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    Button(onClick = { viewModel.resetUiState() }) {
-                        Text("Try Again")
-                    }
-                }
-            }
+            ErrorScreen(
+                errorMessage = (uiState as TasksUiState.Error).message,
+                onErrorClick = { viewModel.resetUiState() }
+            )
         }
         else -> {
             TasksScreen(

@@ -17,6 +17,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.coursecompanionapp.R
 import com.example.coursecompanionapp.model.data.local.entity.NoteEntity
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
+import com.example.coursecompanionapp.presentation.ui.screen.error.ErrorScreen
+import com.example.coursecompanionapp.presentation.ui.screen.loading.LoadingScreen
 import com.example.coursecompanionapp.presentation.ui.screen.notes.component.NoteItem
 import com.example.coursecompanionapp.presentation.viewmodel.notes.NotesUiState
 import com.example.coursecompanionapp.presentation.viewmodel.notes.NotesViewModel
@@ -50,28 +52,13 @@ fun NotesScreen(
 
     when (uiState) {
         is NotesUiState.Loading -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
+            LoadingScreen()
         }
         is NotesUiState.Error -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = (uiState as NotesUiState.Error).message,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    Button(onClick = { viewModel.resetUiState() }) {
-                        Text("Try Again")
-                    }
-                }
-            }
+            ErrorScreen(
+                errorMessage = (uiState as NotesUiState.Error).message,
+                onErrorClick = { viewModel.resetUiState() }
+            )
         }
         else -> {
             NotesScreen(

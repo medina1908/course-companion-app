@@ -21,8 +21,10 @@ import com.example.coursecompanionapp.model.data.local.entity.CourseEntity
 import com.example.coursecompanionapp.model.data.local.entity.TaskEntity
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.component.UserSectionCard
+import com.example.coursecompanionapp.presentation.ui.screen.error.ErrorScreen
 import com.example.coursecompanionapp.presentation.ui.screen.home.component.DashboardHeader
 import com.example.coursecompanionapp.presentation.ui.screen.home.component.StatItem
+import com.example.coursecompanionapp.presentation.ui.screen.loading.LoadingScreen
 import com.example.coursecompanionapp.presentation.viewmodel.dashboard.DashboardUiState
 import com.example.coursecompanionapp.presentation.viewmodel.dashboard.DashboardViewModel
 
@@ -38,28 +40,13 @@ fun DashboardScreen(
 
     when (uiState) {
         is DashboardUiState.Loading -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
+            LoadingScreen()
         }
         is DashboardUiState.Error -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = (uiState as DashboardUiState.Error).message,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    Button(onClick = { viewModel.resetUiState() }) {
-                        Text("Try Again")
-                    }
-                }
-            }
+            ErrorScreen(
+                errorMessage = (uiState as DashboardUiState.Error).message,
+                onErrorClick = { viewModel.resetUiState() }
+            )
         }
         else -> {
             DashboardScreen(

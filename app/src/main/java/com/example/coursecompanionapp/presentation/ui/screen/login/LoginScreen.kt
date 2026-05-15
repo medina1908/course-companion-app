@@ -20,13 +20,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.coursecompanionapp.R
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
+import com.example.coursecompanionapp.presentation.ui.screen.error.ErrorScreen
+import com.example.coursecompanionapp.presentation.ui.screen.loading.LoadingScreen
 import com.example.coursecompanionapp.presentation.ui.screen.login.component.LoginButton
 import com.example.coursecompanionapp.presentation.viewmodel.login.LoginNavigationEvent
 import com.example.coursecompanionapp.presentation.viewmodel.login.LoginUiState
 import com.example.coursecompanionapp.presentation.viewmodel.login.LoginViewModel
 
-private fun isEmailValid(email: String) = email.contains("stu.ibu.edu.ba") && email.isNotBlank()
-private fun isPasswordValid(password: String) = password.length >= 8
 
 // STATEFUL
 @Composable
@@ -51,28 +51,13 @@ fun LoginScreen(
 
     when (uiState) {
         is LoginUiState.Loading -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
+            LoadingScreen()
         }
         is LoginUiState.Error -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = (uiState as LoginUiState.Error).message,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    Button(onClick = { viewModel.resetUiState() }) {
-                        Text("Try Again")
-                    }
-                }
-            }
+            ErrorScreen(
+                errorMessage = (uiState as LoginUiState.Error).message,
+                onErrorClick = { viewModel.resetUiState() }
+            )
         }
         else -> {
             LoginScreen(

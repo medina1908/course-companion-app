@@ -17,6 +17,8 @@ import com.example.coursecompanionapp.R
 import com.example.coursecompanionapp.model.data.local.entity.CourseEntity
 import com.example.coursecompanionapp.presentation.theme.CourseCompanionAppTheme
 import com.example.coursecompanionapp.presentation.ui.screen.courses.component.CourseItem
+import com.example.coursecompanionapp.presentation.ui.screen.error.ErrorScreen
+import com.example.coursecompanionapp.presentation.ui.screen.loading.LoadingScreen
 import com.example.coursecompanionapp.presentation.viewmodel.courses.CoursesUiState
 import com.example.coursecompanionapp.presentation.viewmodel.courses.CoursesViewModel
 
@@ -27,8 +29,8 @@ private fun isCourseFormValid(name: String, professor: String, credits: String) 
 @Composable
 fun CoursesScreen(
     viewModel: CoursesViewModel,
+    modifier: Modifier = Modifier,
     onCourseClick: (Int, String) -> Unit = { _, _ -> },
-    modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val courses by viewModel.courses.collectAsStateWithLifecycle()
@@ -47,28 +49,13 @@ fun CoursesScreen(
 
     when (uiState) {
         is CoursesUiState.Loading -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
+            LoadingScreen()
         }
         is CoursesUiState.Error -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = (uiState as CoursesUiState.Error).message,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    Button(onClick = { viewModel.resetUiState() }) {
-                        Text("Try Again")
-                    }
-                }
-            }
+            ErrorScreen(
+                errorMessage = (uiState as CoursesUiState.Error).message,
+                onErrorClick = { viewModel.resetUiState() }
+            )
         }
         else -> {
             CoursesScreen(

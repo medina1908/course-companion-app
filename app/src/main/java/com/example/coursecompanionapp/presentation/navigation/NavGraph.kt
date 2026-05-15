@@ -34,9 +34,8 @@ fun NavGraph(
         modifier = modifier
     ) {
         composable(route = Screen.Login.route) {
-            val viewModel: LoginViewModel = hiltViewModel()
             LoginScreen(
-                viewModel = viewModel,
+                viewModel = hiltViewModel(),
                 onNavigate = {
                     navController.navigate(Screen.Dashboard.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
@@ -45,34 +44,29 @@ fun NavGraph(
             )
         }
         composable(route = Screen.Dashboard.route) {
-            val viewModel: DashboardViewModel = hiltViewModel()
-            DashboardScreen(viewModel = viewModel)
+            DashboardScreen(viewModel = hiltViewModel())
         }
         composable(route = Screen.Courses.route) {
-            val viewModel: CoursesViewModel = hiltViewModel()
             CoursesScreen(
-                viewModel = viewModel,
+                viewModel = hiltViewModel(),
                 onCourseClick = { courseId, courseName ->
                     navController.navigate(Screen.CourseDetail.createRoute(courseId, courseName))
                 }
             )
         }
         composable(route = Screen.Notes.route) {
-            val viewModel: NotesViewModel = hiltViewModel()
             NotesScreen(
-                viewModel = viewModel,
+                viewModel = hiltViewModel(),
                 onNoteClick = { noteTitle, noteContent ->
                     navController.navigate(Screen.NoteDetail.createRoute(noteTitle, noteContent))
                 }
             )
         }
         composable(route = Screen.Tasks.route) {
-            val viewModel: TasksViewModel = hiltViewModel()
-            TasksScreen(viewModel = viewModel)
+            TasksScreen(viewModel = hiltViewModel())
         }
         composable(route = Screen.Profile.route) {
-            val viewModel: ProfileViewModel = hiltViewModel()
-            ProfileScreen(viewModel = viewModel)
+            ProfileScreen(viewModel = hiltViewModel())
         }
         composable(
             route = Screen.CourseDetail.route,
